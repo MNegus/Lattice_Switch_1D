@@ -4,7 +4,9 @@
 
 #include "Potentials.h"
 
-void U_selector(double const_arr[], PotentialDef func_arr[], char name[]) {
+// Returns potential specific constant values and function pointers
+void U_selector(double const_arr[], PotentialFun func_arr[], char name[]) {
+	// Function from kinetic theory notes
 	if (strcmp(name, "KT") == 0) {
 		const_arr[0] = -2; // Left minimum
 		const_arr[1] = 2.4; // Right minimum
@@ -15,6 +17,7 @@ void U_selector(double const_arr[], PotentialDef func_arr[], char name[]) {
 		func_arr[1] = &KT_U_shifted;
 		func_arr[2] = &KT_DU;
 	} 
+	// Quartic function
 	else if (strcmp(name, "QUARTIC") == 0) {
 		const_arr[0] = -1.220997215942; // Left minimum
 		const_arr[1] = 1.5989977937; // Right minimum
@@ -25,6 +28,7 @@ void U_selector(double const_arr[], PotentialDef func_arr[], char name[]) {
 		func_arr[1] = &QUARTIC_U_shifted;
 		func_arr[2] = &QUARTIC_DU;
 	}
+	// Potential function with differing well widths
 	else if (strcmp(name, "DIFF_WIDTH") == 0) {
 		const_arr[0] = -2; // Left minimum
 		const_arr[1] = sqrt(0.48); // Right minimum

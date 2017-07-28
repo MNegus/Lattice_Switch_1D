@@ -1,9 +1,11 @@
 #ifndef POTENTIALS_H
 #define POTENTIALS_H
 
-typedef double (*PotentialDef)(double);
+// Typedef for a function pointer
+typedef double (*PotentialFun)(double);
 
-void U_selector(double const_arr[], PotentialDef func_arr[], char name[]);
+// Returns potential specific constant values and function pointers
+void U_selector(double const_arr[], PotentialFun func_arr[], char name[]);
 
 // Potential function from Kinetic Theory notes
 double KT_U(double x);
