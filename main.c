@@ -10,6 +10,7 @@
 /* Structure to store relevant parameters */
 struct parameters{
 	// Numerical parameters
+	char potential_name[10];
 	long tot_timesteps;
 	double timestep;
 	int start_well;
@@ -21,6 +22,10 @@ struct parameters{
 	double mass;
 	double shift_value;
 	double minima[2];
+
+	PotentialFun Poten;
+	PotentialFun Poten_shifted;
+	PotentialFun Poten_deriv;
 };
 typedef struct parameters parameters;
 
@@ -64,22 +69,9 @@ double BAOAB_limit(double x, parameters *params, PotentialFun Poten_deriv, doubl
 }
 
 // Calculates the free energy different between states in the two wells of a given potential function
-void calc_energy_diff(char potential_name[], parameters *params, char outputfilename[]){
+void calc_energy_diff(parameters *params, char *outputfilename){
 	srand ( time(NULL) ); // Seeds the random number generators
 	
-	/* Retrieves constants and functions relevant to the specific potential chosen */
-	double const_arr[] = {0, 0, 0}; // Array for constants
-	PotentialFun func_arr[] = {0, 0, 0}; // Array for potential functions 
-	U_selector(const_arr, func_arr, potential_name); // Fills the constant and function arrays
-
-	params->minima[0] = const_arr[0]; // x-coordinates of the minima of the wells
-	params->minima[1] = const_arr[1];
-	params->shift_value = const_arr[2]; // The amount the right minima has been shifted upwards
-
-	// PotentialFun Poten = func_arr[0]; // Function pointer for the potential
-	PotentialFun Poten_shift = func_arr[1]; // Function pointerfor the shifted potential
-	PotentialFun Poten_deriv = func_arr[2]; // Function pointer for the derivative of the potential
-
 	double x = x_pos(params, params->start_well, 0); // x-position initially at the bottom of the starting well
 
 	double no_left = 0; // Number of timesteps that the particle is in the left well
@@ -102,7 +94,7 @@ void calc_energy_diff(char potential_name[], parameters *params, char outputfile
 		}
 
 		// BAOAB step
-		x = BAOAB_limit(x, params, Poten_deriv, R); // Changes x according to the BAOAB limit method
+		x = BAOAB_limit(x, params, params->Poten_deriv, R); // Changes x according to the BAOAB limit method
 		R[0] = R[1]; // Current value of R becomes the next one
 		box_muller_rand(normal_dist);
 		R[1] = normal_dist[0]; // Next value for R is drawn from a normal distribution
@@ -120,7 +112,8 @@ void calc_energy_diff(char potential_name[], parameters *params, char outputfile
 		if (m % params->switch_regularity == 0){
 			double dis = well_dis(params, cur_well, x); // Displacement from the current well
 			int oth_well = (cur_well + 1) % 2; // Other well
-			double diff_poten = (*Poten_shift)(x_pos(params, oth_well, dis)) - (*Poten_shift)(x); // Difference in potential
+			double diff_poten = (*params->Poten_shifted)(x_pos(params, oth_well, dis)) - \
+				(*params->Poten_shifted)(x); // Difference in potential
 			// Attempts a Monte-Carlo lattice switch
 			if (uniform_rand() < min(1, exp(-diff_poten))){
 				cur_well = oth_well;
@@ -135,23 +128,97 @@ void calc_energy_diff(char potential_name[], parameters *params, char outputfile
 			}
 		}
 	}
-	printf("I reached the end!\n");
+}
+
+/* Function to use fscanf to read strings from a line in an input file */
+void read_char(FILE *input_file, char *char_value){
+    /* Attempts to read line of input file */
+    if (fscanf(input_file, "%s", char_value) != 1) {
+        printf("Failed to read parameter\n");
+        exit(1);
+    }
+}
+
+/* Function to use fscanf to read doubles from a line in an input file */
+void read_double(FILE *input_file, double *double_value){
+    /* Attempts to read line of input file */
+    if (fscanf(input_file, "%lf", double_value) != 1) {
+        printf("Failed to read parameter\n");
+        exit(1);
+    }
 }
 
 
+/* Function to use fscanf to read longs from a line in an input file */
+void read_long(FILE *input_file, long *long_value){
+    /* Attempts to read line of input file */
+    if (fscanf(input_file, "%ld", long_value) != 1) {
+        printf("Failed to read parameter\n");
+        exit(1);
+    }
+}
 
-int main(void){
+// Function to use fscanf to read ints from a line in an input file
+void read_int(FILE *input_file, int *int_value){
+	/* Attempts to read line of input file */
+    if (fscanf(input_file, "%d", int_value) != 1) {
+        printf("Failed to read parameter\n");
+        exit(1);
+    }
+}
+
+// Reads an input file to store the parameters
+void store_parameters(parameters *params, char *input_filename){
+	FILE *input_file = fopen(input_filename, "r");
+	if (input_filename == NULL){
+		printf("Failed to open input file \n");
+		exit(1);
+	}
+	read_char(input_file,   params->potential_name);
+	read_long(input_file,   &params->tot_timesteps);
+	read_double(input_file, &params->timestep);
+	read_int(input_file,    &params->start_well);
+	read_int(input_file,    &params->switch_regularity);
+	read_int(input_file,    &params->write_regularity);
+	read_double(input_file, &params->kT);
+	read_double(input_file, &params->mass);
+
+	double const_arr[] = {0, 0, 0}; // Array for constants
+	PotentialFun func_arr[] = {0, 0, 0}; // Array for potential functions 
+	U_selector(const_arr, func_arr, params->potential_name); // Fills the constant and function arrays
+
+	params->Poten = func_arr[0];
+	params->Poten_shifted = func_arr[1];
+	params->Poten_deriv = func_arr[2];
+
+	params->minima[0] = const_arr[0]; // x-coordinates of the minima of the wells
+	params->minima[1] = const_arr[1];
+	params->shift_value = const_arr[2]; // The amount the right minima has been shifted upwards
+}
+
+int main(int argc, char **argv){
+	char *input_filename = argv[1];
+	char *output_filename = argv[2];
+
 	parameters params;
-	params.tot_timesteps = 10000000;
-	params.timestep = 0.0001;
-	params.start_well = 0;
-	params.switch_regularity = 10;
-	params.write_regularity = 10;
+	store_parameters(&params, input_filename);
+	calc_energy_diff(&params, output_filename);
 
-	params.kT = 1;
-	params.mass = 1;
 
-	calc_energy_diff("QUARTIC", &params, "/home/michael/Documents/c_output.txt");
+
+
+
+	// printf("%s\n", params.potential_name);
+	// printf("%ld\n", params.tot_timesteps);
+	// printf("%lf\n", params.timestep);
+	// printf("%d\n", params.start_well);
+	// printf("%d\n", params.switch_regularity);
+	// printf("%d\n", params.write_regularity);
+	// printf("%lf\n", params.kT);
+	// printf("%lf\n", params.mass);
+	// printf("%lf\n", params.minima[0]);
+	// printf("%lf\n", params.minima[1]);
+	// printf("%lf\n", params.shift_value);
 
 	return 0;
 }
