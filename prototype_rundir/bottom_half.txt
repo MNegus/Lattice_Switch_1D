@@ -5,9 +5,9 @@ SWITCH_REGULARITY=10;
 WRITE_REGULARITY=10;
 MASS=1;
 
-inputfilename="job_"$POTENTIAL_NAME"_"$JOB_NO"_input.txt";
-outputfilename="job_"$POTENTIAL_NAME"_"$JOB_NO"_output.txt";
-datafilename="job_"$POTENTIAL_NAME"_"$JOB_NO"_data.csv";
+inputfilename=$WORK_DIRECTORY"/io_storage/"$POTENTIAL_NAME"/job_"$POTENTIAL_NAME"_"$JOB_NO"_input.txt";
+outputfilename=$WORK_DIRECTORY"/io_storage/"$POTENTIAL_NAME"/job_"$POTENTIAL_NAME"_"$JOB_NO"_output.txt";
+datafilename=$DATA_DIRECTORY"/job_"$POTENTIAL_NAME"_"$JOB_NO"_data.csv";
 echo "Potential name, Total timesteps, Timestep, kT, mass, Energy Difference, Standard Error">$datafilename;
 
 for timestep in $(seq $TIME_MIN $TIME_INC $TIME_MAX)
