@@ -93,6 +93,10 @@ void create_energy_diff_data(parameters *params, char *outputfilename){
 			no_left++;
 		}
 
+		if (isnan(x) || (x == INFINITY) || (x == -INFINITY)){
+			printf("Infinite x value reached\n");
+		}
+
 		// BAOAB step
 		x = BAOAB_limit(x, params, params->Poten_deriv, R); // Changes x according to the BAOAB limit method
 		R[0] = R[1]; // Current value of R becomes the next one
@@ -197,32 +201,80 @@ void store_parameters(parameters *params, char *input_filename){
 }
 
 void calculate_energy_diff(double ret_arr[2], char *output_filename, double sample_portion, int sample_regularity){
-	double line_val;
+	long no_lines=0;
+	char ch;
 	FILE *output_file = fopen(output_filename, "r");
-	long line_no = 1;
+	while((ch=fgetc(output_file))!=EOF)
+	{
+		if (ch=='\n') {
+		 no_lines++; 
+		}
+	}
+	fclose(output_file);
 
+	long start_line = (long)(no_lines * (1 - sample_portion));
+	while (start_line % sample_regularity != 0){
+		start_line--;
+	}
 
+	long arr_length = (long)((no_lines - start_line) / sample_regularity) + 1;
+	double *data_arr = malloc(sizeof(double) * (arr_length));
+
+	double line_val;
+	double mean = 0;
+	output_file = fopen(output_filename, "r");
+	long line = 1;
+
+	long arr_pos = 0;
+	while (fscanf(output_file, "%lf", &line_val) == 1){
+		if ((line >= start_line) && (line % sample_regularity == 0)){
+			data_arr[arr_pos] = line_val;
+			mean += line_val;
+			arr_pos++;
+		}
+		line++;
+	}
+	fclose(output_file);
+
+	mean = mean / arr_length;
+	ret_arr[0] = mean;
+	
+	double std_error = 0;
+	for (long j = 0; j < arr_length; j++){
+		std_error += (data_arr[j] - mean) * (data_arr[j] - mean);
+	}
+
+	std_error = sqrt(std_error) / arr_length;
+	ret_arr[1] = std_error;
 
 }
 
 int main(int argc, char **argv){
 	char *input_filename = argv[1];
 	char *output_filename = argv[2];
+	char *datastore_filename = argv[3];
 
 	parameters params;
 	store_parameters(&params, input_filename);
-	create_energy_diff_data(&params, output_filename);
 
+	double mean_of_simulations = 0;
+	double std_error_of_simulations = 0;
+	for (int i = 0; i < 10; i++){
+		create_energy_diff_data(&params, output_filename);
+		double ret_arr[2] = {0, 0};
+		calculate_energy_diff(ret_arr, output_filename, 0.01, 100);
+		mean_of_simulations += ret_arr[0];
+		std_error_of_simulations += ret_arr[1] * ret_arr[1];
+	}
 
-	// long lines=0;
-	// char ch;
-	// FILE *fp=fopen(output_filename,"r");
-	// while((ch=fgetc(fp))!=EOF)
-	// {
-	// if (ch=='\n') { lines++; }
-	// }
-	// fclose(fp);
-	// printf("%ld\n", lines);
+	mean_of_simulations = mean_of_simulations / 10;
+	std_error_of_simulations = sqrt(std_error_of_simulations) / 10;
+
+	FILE *datastore_file = fopen(datastore_filename, "a");
+	fprintf(datastore_file, "%s, %ld, %lf, %lf, %lf, %g, %g\n",
+	 params.potential_name, params.tot_timesteps, params.timestep, params.kT, params.mass,
+	  mean_of_simulations, std_error_of_simulations);
+	fclose(datastore_file);
 
 
 	// printf("%s\n", params.potential_name);
