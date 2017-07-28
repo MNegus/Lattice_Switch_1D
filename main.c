@@ -69,7 +69,7 @@ double BAOAB_limit(double x, parameters *params, PotentialFun Poten_deriv, doubl
 }
 
 // Calculates the free energy different between states in the two wells of a given potential function
-void calc_energy_diff(parameters *params, char *outputfilename){
+void create_energy_diff_data(parameters *params, char *outputfilename){
 	srand ( time(NULL) ); // Seeds the random number generators
 	
 	double x = x_pos(params, params->start_well, 0); // x-position initially at the bottom of the starting well
@@ -196,16 +196,33 @@ void store_parameters(parameters *params, char *input_filename){
 	params->shift_value = const_arr[2]; // The amount the right minima has been shifted upwards
 }
 
+void calculate_energy_diff(double ret_arr[2], char *output_filename, double sample_portion, int sample_regularity){
+	double line_val;
+	FILE *output_file = fopen(output_filename, "r");
+	long line_no = 1;
+
+
+
+}
+
 int main(int argc, char **argv){
 	char *input_filename = argv[1];
 	char *output_filename = argv[2];
 
 	parameters params;
 	store_parameters(&params, input_filename);
-	calc_energy_diff(&params, output_filename);
+	create_energy_diff_data(&params, output_filename);
 
 
-
+	// long lines=0;
+	// char ch;
+	// FILE *fp=fopen(output_filename,"r");
+	// while((ch=fgetc(fp))!=EOF)
+	// {
+	// if (ch=='\n') { lines++; }
+	// }
+	// fclose(fp);
+	// printf("%ld\n", lines);
 
 
 	// printf("%s\n", params.potential_name);
