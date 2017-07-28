@@ -102,7 +102,7 @@ double QUARTIC_U_shifted(double x){
 		return pow(x + x_0, 4) - 4 * (x + x_0) * (x + x_0) - (x + x_0) + 2.618555980765;
 	}
 	else {
-		pow(x + x_0, 4) - 4 * (x + x_0) * (x + x_0) - (x + x_0) + 5.444192066610897;
+		return pow(x + x_0, 4) - 4 * (x + x_0) * (x + x_0) - (x + x_0) + 5.444192066610897;
 	}
 }
 

@@ -10,17 +10,17 @@
 /* Structure to store relevant parameters */
 struct parameters{
 	// Numerical parameters
-	double tot_timesteps;
+	long tot_timesteps;
 	double timestep;
-	double sample_portion;
 	int start_well;
 	int switch_regularity;
+	int write_regularity;
 	
 	// Physical parameters
 	double kT;
 	double mass;
 	double shift_value;
-	double minima[];
+	double minima[2];
 };
 typedef struct parameters parameters;
 
@@ -64,7 +64,7 @@ double BAOAB_limit(double x, parameters *params, PotentialFun Poten_deriv, doubl
 }
 
 // Calculates the free energy different between states in the two wells of a given potential function
-void calc_energy_diff(double ret_arr[], char potential_name[], parameters *params, char data_dir, char output_filename){
+void calc_energy_diff(char potential_name[], parameters *params, char outputfilename[]){
 	srand ( time(NULL) ); // Seeds the random number generators
 	
 	/* Retrieves constants and functions relevant to the specific potential chosen */
@@ -76,7 +76,7 @@ void calc_energy_diff(double ret_arr[], char potential_name[], parameters *param
 	params->minima[1] = const_arr[1];
 	params->shift_value = const_arr[2]; // The amount the right minima has been shifted upwards
 
-	PotentialFun Poten = func_arr[0]; // Function pointer for the potential
+	// PotentialFun Poten = func_arr[0]; // Function pointer for the potential
 	PotentialFun Poten_shift = func_arr[1]; // Function pointerfor the shifted potential
 	PotentialFun Poten_deriv = func_arr[2]; // Function pointer for the derivative of the potential
 
@@ -85,6 +85,9 @@ void calc_energy_diff(double ret_arr[], char potential_name[], parameters *param
 	double no_left = 0; // Number of timesteps that the particle is in the left well
 
 	int cur_well = params->start_well; // Indicates which well the particle is in (0 is left well, 1 is right well)
+
+	remove(outputfilename);
+	FILE *outputfile;
 
 	// Generates normally distributed values for R, which stores the current value and the value at the next timestep
 	double normal_dist[] = {0, 0};
@@ -118,23 +121,37 @@ void calc_energy_diff(double ret_arr[], char potential_name[], parameters *param
 			double dis = well_dis(params, cur_well, x); // Displacement from the current well
 			int oth_well = (cur_well + 1) % 2; // Other well
 			double diff_poten = (*Poten_shift)(x_pos(params, oth_well, dis)) - (*Poten_shift)(x); // Difference in potential
-			// if uniform_rand() < min(1, exp(-diff_poten)){
+			// Attempts a Monte-Carlo lattice switch
+			if (uniform_rand() < min(1, exp(-diff_poten))){
+				cur_well = oth_well;
+				x = x_pos(params, cur_well, dis);
+			}
 
-			// }
+			if ((m / params->switch_regularity) % params->write_regularity == 0){
+				double energy_diff = -params->kT * log((double)(no_left) / (m - no_left)) + params->shift_value;
+				outputfile = fopen(outputfilename, "a");
+				fprintf(outputfile, "%g\n", energy_diff);
+				fclose(outputfile);
+			}
 		}
-
 	}
+	printf("I reached the end!\n");
 }
 
 
 
 int main(void){
-	// double ret_arr[] = {0, 0};
-	// calc_energy_diff(ret_arr, "KT", 1000000, 0.01, 1, 0.01);
-	// printf("%f %f\n", ret_arr[0], ret_arr[1]);
-	srand ( time(NULL) );
-	char piss[] = "hello boy";
-	char lips[] = " is it";
-	strcat(piss, lips);
-	printf("%s\n", piss);
+	parameters params;
+	params.tot_timesteps = 10000000;
+	params.timestep = 0.0001;
+	params.start_well = 0;
+	params.switch_regularity = 10;
+	params.write_regularity = 10;
+
+	params.kT = 1;
+	params.mass = 1;
+
+	calc_energy_diff("QUARTIC", &params, "/home/michael/Documents/c_output.txt");
+
+	return 0;
 }
