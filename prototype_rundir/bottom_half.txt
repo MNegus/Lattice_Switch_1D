@@ -1,0 +1,29 @@
+
+TOT_TIMESTEPS=10000000;
+START_WELL=0;
+SWITCH_REGULARITY=10;
+WRITE_REGULARITY=10;
+MASS=1;
+
+inputfilename="job_"$POTENTIAL_NAME"_"$JOB_NO"_input.txt";
+outputfilename="job_"$POTENTIAL_NAME"_"$JOB_NO"_output.txt";
+datafilename="job_"$POTENTIAL_NAME"_"$JOB_NO"_data.csv";
+echo "Potential name, Total timesteps, Timestep, kT, mass, Energy Difference, Standard Error">$datafilename;
+
+for timestep in $(seq $TIME_MIN $TIME_INC $TIME_MAX)
+do
+	for kT in $(seq $TEMP_MIN $TEMP_INC $TEMP_MAX)
+	do
+
+		echo $POTENTIAL_NAME>$inputfilename;
+		echo $TOT_TIMESTEPS>>$inputfilename;
+		echo $timestep>>$inputfilename;
+		echo $START_WELL>>$inputfilename;
+		echo $SWITCH_REGULARITY>>$inputfilename;
+		echo $WRITE_REGULARITY>>$inputfilename;
+		echo $kT>>$inputfilename;
+		echo $MASS>>$inputfilename;
+
+		./baoab_limit_switch $inputfilename $outputfilename $datafilename;
+	done
+done
