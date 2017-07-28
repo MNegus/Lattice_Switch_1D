@@ -7,7 +7,7 @@ TEMP_MIN=0.1;
 TEMP_MAX=1.0;
 TEMP_INC=0.1;
 
-WORK_DIRECTORY="/storage/molsim/phuhzr/storage/molsim/phuhzr/Lattice_Switch_1D"
+WORK_DIRECTORY="/storage/molsim/phuhzr/Lattice_Switch_1D"
 
 
 for POTENTIAL_NAME in "KT" "QUARTIC" "DIFF_WIDTH"
