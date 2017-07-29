@@ -261,9 +261,7 @@ int main(int argc, char **argv){
 	double mean_of_simulations = 0;
 	double std_error_of_simulations = 0;
 	for (int i = 0; i < 10; i++){
-		printf("I'm just before the boy\n");
 		create_energy_diff_data(&params, output_filename);
-		printf("outta there\n");
 		double ret_arr[2] = {0, 0};
 		calculate_energy_diff(ret_arr, output_filename, 0.01, 100);
 		mean_of_simulations += ret_arr[0];
