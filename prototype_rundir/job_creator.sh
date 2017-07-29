@@ -34,6 +34,8 @@ do
 		echo " ">>$jobfilename;
 		echo "TIME_MIN="$TIME_MIN";">>$jobfilename;
 		echo "TIME_MAX="$TIME_MAX";">>$jobfilename;
+		echo "TEMP_MIN="$TEMP_MIN";">>$jobfilename;
+		echo "TEMP_MAX="$TEMP_MAX";">>$jobfilename;
 		cat bottom_half.txt>>$jobfilename;
 	done
 done
