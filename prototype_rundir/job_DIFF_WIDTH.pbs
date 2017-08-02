@@ -1,7 +1,7 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=1,pvmem=256mb,walltime=08:00:00
+#PBS -l nodes=1:ppn=1,pvmem=256mb,walltime=12:00:00
 #PBS -V
-#PBS –q dovah
+#PBS –q spacebat
 #PBS -t 1-25
 
 source start_subjob.sh DIFF_WIDTH $PBS_ARRAYID
