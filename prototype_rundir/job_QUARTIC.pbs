@@ -1,0 +1,11 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=1,pvmem=256mb,walltime=08:00:00
+#PBS -V
+#PBS –q dovah
+#PBS -t 1-25
+
+for f in subjob_QUARTIC*; do
+	source f;
+done
+
+
