@@ -14,8 +14,8 @@ for timestep in $(seq $TIME_MIN $TIME_INC $TIME_MAX)
 do
 	for kT in $(seq $TEMP_MIN $TEMP_INC $TEMP_MAX)
 	do
-
-		echo $POTENTIAL_NAME>$inputfilename;
+		echo "LIMIT">$inputfilename;
+		echo $POTENTIAL_NAME>>$inputfilename;
 		echo $TOT_TIMESTEPS>>$inputfilename;
 		echo $timestep>>$inputfilename;
 		echo $START_WELL>>$inputfilename;
