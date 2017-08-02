@@ -4,8 +4,6 @@
 #PBS –q dovah
 #PBS -t 1-25
 
-for f in subjob_DIFF_WIDTH*; do
-	source f;
-done
+source start_subjob.sh DIFF_WIDTH $PBS_ARRAYID
 
 

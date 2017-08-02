@@ -4,8 +4,4 @@
 #PBS –q dovah
 #PBS -t 1-25
 
-for f in subjob_QUARTIC*; do
-	source f;
-done
-
-
+source start_subjob.sh QUARTIC $PBS_ARRAYID
