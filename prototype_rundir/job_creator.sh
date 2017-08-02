@@ -18,24 +18,22 @@ do
 		TIME_MIN=$(python -c "print $OVERALL_TIME_MIN + ($JOB_NO - 1) * 4 * $TIME_INC");
 		TIME_MAX=$(python -c "print $TIME_MIN + 3 * $TIME_INC");
 
-		jobfilename="runjob_"$POTENTIAL_NAME"_"$JOB_NO".pbs";
-		echo "#!/bin/bash">$jobfilename;
-		echo "#PBS -l nodes=1:ppn=1,mem=256mb,walltime=12:00:00">>$jobfilename;
-		echo "#PBS -V">>$jobfilename;
-		echo " ">>$jobfilename;
-		echo "WORK_DIRECTORY="$WORK_DIRECTORY";">>$jobfilename;
-		echo "DATA_DIRECTORY="$DATA_DIRECTORY";">>$jobfilename;
-		echo "cd $WORK_DIRECTORY;">>$jobfilename;
-		echo " ">>$jobfilename;
-		echo "POTENTIAL_NAME="$POTENTIAL_NAME";">>$jobfilename;
-		echo "JOB_NO="$JOB_NO";">>$jobfilename;
-		echo "TIME_INC="$TIME_INC";">>$jobfilename;
-		echo "TEMP_INC="$TEMP_INC";">>$jobfilename;
-		echo " ">>$jobfilename;
-		echo "TIME_MIN="$TIME_MIN";">>$jobfilename;
-		echo "TIME_MAX="$TIME_MAX";">>$jobfilename;
-		echo "TEMP_MIN="$TEMP_MIN";">>$jobfilename;
-		echo "TEMP_MAX="$TEMP_MAX";">>$jobfilename;
-		cat bottom_half.txt>>$jobfilename;
+		subjobfilename="subjob_"$POTENTIAL_NAME"_"$JOB_NO".sh";
+		echo "#!/bin/bash">$subjobfilename;
+		echo " ">>$subjobfilename
+		echo "WORK_DIRECTORY="$WORK_DIRECTORY";">>$subjobfilename;
+		echo "DATA_DIRECTORY="$DATA_DIRECTORY";">>$subjobfilename;
+		echo "cd $WORK_DIRECTORY;">>$subjobfilename;
+		echo " ">>$subjobfilename;
+		echo "POTENTIAL_NAME="$POTENTIAL_NAME";">>$subjobfilename;
+		echo "JOB_NO="$JOB_NO";">>$subjobfilename;
+		echo "TIME_INC="$TIME_INC";">>$subjobfilename;
+		echo "TEMP_INC="$TEMP_INC";">>$subjobfilename;
+		echo " ">>$subjobfilename;
+		echo "TIME_MIN="$TIME_MIN";">>$subjobfilename;
+		echo "TIME_MAX="$TIME_MAX";">>$subjobfilename;
+		echo "TEMP_MIN="$TEMP_MIN";">>$subjobfilename;
+		echo "TEMP_MAX="$TEMP_MAX";">>$subjobfilename;
+		cat bottom_half.txt>>$subjobfilename;
 	done
 done
