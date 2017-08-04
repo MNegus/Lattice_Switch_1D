@@ -1,5 +1,5 @@
-#ifndef BAOAB_H
-#define BAOAB_H
+#ifndef DYNAMICS_H
+#define DYNAMICS_H
 #include "Parameters.h"
 
 double BAOAB_limit(double x, parameters *params, double R[2]){
