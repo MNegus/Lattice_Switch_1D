@@ -13,10 +13,9 @@
 /* Structure to store relevant parameters */
 struct parameters{
 	/* Numerical parameters */
-	char baoab_type[10];
-	char potential_name[10];
-	long tot_timesteps;
-	double timestep;
+	char dynamics_type[256];
+	char potential_name[256];
+	long tot_steps;
 	int start_well;
 	int switch_regularity;
 	int write_regularity;
@@ -27,12 +26,18 @@ struct parameters{
 	double shift_value;
 	double minima[2];
 	
-	// Specific to the regular BAOAB method
-	double friction_param;
-	double const1;
-	double const2;
-	double const3;
+	// BAOAB and BAOAB limit parameters
+	double timestep;
+	double R[2];
 
+	// // Specific to the regular BAOAB method
+	// double friction_param;
+	// double const1;
+	// double const2;
+	// double const3;
+
+	// Specific to the Monte-Carlo method
+	double jump_size;
 
 	PotentialFun Poten;
 	PotentialFun Poten_shifted;
@@ -42,12 +47,14 @@ struct parameters{
 typedef struct parameters parameters;
 
 
+
+
 /* Function to use fscanf to read strings from a line in an input file */
-void read_char(FILE *input_file, char *char_value){
+void read_char(FILE *input_file, char char_value[256]){
     /* Attempts to read line of input file */
-    if (fscanf(input_file, "%s", char_value) != 1) {
-        printf("Failed to read parameter\n");
-        exit(1);
+    if (fscanf(input_file, "%[^\n]%*c", char_value) != 1){
+    	printf("Failed to read parameter\n");
+    	exit(1);
     }
 }
 
@@ -86,22 +93,33 @@ void store_parameters(parameters *params, char *input_filename){
 		printf("Failed to open input file \n");
 		exit(1);
 	}
-	read_char(input_file,   params->baoab_type);
+	read_char(input_file,   params->dynamics_type);
 	read_char(input_file,   params->potential_name);
-	read_long(input_file,   &params->tot_timesteps);
-	read_double(input_file, &params->timestep);
+	read_long(input_file,   &params->tot_steps);
 	read_int(input_file,    &params->start_well);
 	read_int(input_file,    &params->switch_regularity);
 	read_int(input_file,    &params->write_regularity);
 	read_double(input_file, &params->kT);
 	read_double(input_file, &params->mass);
 
-	if (strcmp(params->baoab_type, "REGULAR") == 0){
-		read_double(input_file, &params->friction_param);
-		params->const1 = exp(-params->friction_param * params->timestep);
-		params->const2 = (1 - params->const1) / params->friction_param;
-		params->const3 = sqrt(params->kT * (1 - params->const1 * params->const1));
-	} 
+	
+	if (strcmp(params->dynamics_type, "BAOAB_LIMIT") == 0){
+		read_double(input_file, &params->timestep);
+
+	}
+	// else if (strcmp(params->dynamics_type, "BAOAB_REGULAR") == 0){
+	// 	read_double(input_file, &params->timestep);
+	// 	read_double(input_file, &params->friction_param);
+	// 	params->const1 = exp(-params->friction_param * params->timestep);
+	// 	params->const2 = (1 - params->const1) / params->friction_param;
+	// 	params->const3 = sqrt(params->kT * (1 - params->const1 * params->const1));
+	// }
+	else if (strcmp(params->dynamics_type, "MONTE-CARLO") == 0){
+		read_double(input_file, &params->jump_size);
+	}
+
+	
+	fclose(input_file);
 
 	double poten_const_arr[] = {0, 0, 0}; // Array for potential specific constants
 	PotentialFun func_arr[] = {0, 0, 0}; // Array for potential functions 
