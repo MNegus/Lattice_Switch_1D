@@ -89,7 +89,7 @@ void read_int(FILE *input_file, int *int_value){
 // Reads an input file to store the parameters
 void store_parameters(parameters *params, char *input_filename){
 	FILE *input_file = fopen(input_filename, "r");
-	if (input_filename == NULL){
+	if (input_file == NULL){
 		printf("Failed to open input file \n");
 		exit(1);
 	}
