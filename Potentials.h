@@ -21,44 +21,50 @@ typedef double (*PotentialFun)(double);
 
 // External potential
 double KT_Poten(double x){
-	if (x <= -1) {
-		return 5 * (x + 2) * (x + 2);
-	} 
-	else if (x <= 1.2) {
-		return 10 - 5 * x * x;
-	}
-	else {
-		return 5 * (x - 2.4) * (x - 2.4) - 4.4;
-	}
+    double pot_val; // Value of the potential at x
+    if (x <= -1) {
+        pot_val = 5 * (x + 2) * (x + 2);
+    }
+    else if (x <= 1.2) {
+        pot_val = 10 - 5 * x * x;
+    }
+    else {
+        pot_val = 5 * (x - 2.4) * (x - 2.4) - 4.4;
+    }
+    return pot_val;
 }
 
 // External potential shifted
 double KT_Poten_shifted(double x){
-	if (x <= -1){
-		return 5 * (x + 2) * (x + 2);
+    double pot_val; // Value of the potential at x
+    if (x <= -1){
+		pot_val = 5 * (x + 2) * (x + 2);
 	}
 	else if (x <= 0) {
-		return 10 - 5 * x * x;
+		pot_val = 10 - 5 * x * x;
 	}
 	else if (x <= 1.2) {
-		return 14.4 - 5 * x * x;
+		pot_val = 14.4 - 5 * x * x;
 	}
 	else {
-		return 5 * (x - 2.4) * (x - 2.4);
+		pot_val = 5 * (x - 2.4) * (x - 2.4);
 	}
+    return pot_val;
 }
 
 // Derivative of potential function
 double KT_Poten_deriv(double x){
+    double pot_val; // Value of the potential at x
 	if (x <= -1) {
-		return 10 * (x + 2);
+		pot_val = 10 * (x + 2);
 	}
 	else if (x <= 1.2) {
-		return -10 * x;
+		pot_val = -10 * x;
 	}
 	else {
-		return 10 * (x - 2.4);
+		pot_val = 10 * (x - 2.4);
 	}
+    return pot_val;
 }
 
 
@@ -72,13 +78,15 @@ double QUARTIC_Poten(double x){
 
 // External potential shifted
 double QUARTIC_Poten_shifted(double x){
+    double pot_val; // Value of the potential at x
 	double x_0 = -0.126000192586256;
 	if (x < 0) {
-		return pow(x + x_0, 4) - 4 * (x + x_0) * (x + x_0) - (x + x_0) + 2.618555980765;
+		pot_val = pow(x + x_0, 4) - 4 * (x + x_0) * (x + x_0) - (x + x_0) + 2.618555980765;
 	}
 	else {
-		return pow(x + x_0, 4) - 4 * (x + x_0) * (x + x_0) - (x + x_0) + 5.444192066610897;
+		pot_val = pow(x + x_0, 4) - 4 * (x + x_0) * (x + x_0) - (x + x_0) + 5.444192066610897;
 	}
+    return pot_val;
 }
 
 // Derivative of potential function
@@ -92,50 +100,56 @@ double QUARTIC_Poten_deriv(double x){
 
 // External potential
 double DIFF_WIDTH_Poten(double x){
+    double pot_val; // Value of the potential at x
 	if (x <= -1) {
-		return 5 * (x + 2) * (x + 2);
+		pot_val = 5 * (x + 2) * (x + 2);
 	}
 	else if (x <= 0) {
-		return 10 - 5 * x * x;
+		pot_val = 10 - 5 * x * x;
 	}
 	else if (x <= 0.3461) {
-		return -50 * x * x + 10;
+		pot_val = -50 * x * x + 10;
 	}
 	else {
-		return 50 * (x - sqrt(0.48)) * (x - sqrt(0.48)) - 2;
+		pot_val = 50 * (x - sqrt(0.48)) * (x - sqrt(0.48)) - 2;
 	}
+    return pot_val;
 }
 
 // External potential shifted
 double DIFF_WIDTH_Poten_shifted(double x){
+    double pot_val; // Value of the potential at x
 	if (x <= -1) {
-		return 5 * (x + 2) * (x + 2);
+		pot_val = 5 * (x + 2) * (x + 2);
 	}
 	else if (x <= 0) {
-		return 10 - 5 * x * x;
+		pot_val = 10 - 5 * x * x;
 	}
 	else if (x <= 0.3461) {
-		return -50 * x * x + 12;
+		pot_val = -50 * x * x + 12;
 	}
 	else {
-		return 50 * (x - sqrt(0.48)) * (x - sqrt(0.48));
+		pot_val = 50 * (x - sqrt(0.48)) * (x - sqrt(0.48));
 	}
+    return pot_val;
 }
 
 // Derivative of potential function
 double DIFF_WIDTH_Poten_deriv(double x){
+    double pot_val; // Value of the potential at x
 	if (x <= -1) {
-		return 10 * (x + 2);
+		pot_val = 10 * (x + 2);
 	}
 	else if (x <= 0) {
-		return -10 * x;
+		pot_val = -10 * x;
 	}
 	else if (x <= 0.3461) {
-		return -100 * x;
+		pot_val = -100 * x;
 	}
 	else {
-		return 100 * (x - sqrt(0.48));
+		pot_val = 100 * (x - sqrt(0.48));
 	}
+    return pot_val;
 }
 
 // Returns potential specific constant values and function pointers

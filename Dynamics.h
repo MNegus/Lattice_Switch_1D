@@ -22,6 +22,7 @@ typedef double (*DynamicsFun)(double, parameters*);
 
 // High friction limit of BAOAB method
 double BAOAB_limit(double x, parameters *params){
+    // Set x according to the formula given in Leimkuhler & Matthews
 	x = x - params->timestep * (*params->Poten_deriv)(x) / params->mass +\
 		sqrt(0.5 * params->kT * params->timestep / params->mass) * (params->R[0] + params->R[1]);
 
@@ -43,27 +44,29 @@ double BAOAB_limit(double x, parameters *params){
 
 // Using Monte-Carlo method to determine where the particle jumps to
 double Monte_Carlo_step(double x, parameters *params){
+    // Possible new position, uniformly distributed
 	double new_x = x + (2 * uniform_rand() - 1) * params->jump_size;
+
+    // Difference in the potential between the new position and the current position
 	double potential_difference = params->Poten_shifted(new_x) - params->Poten_shifted(x);
-	double P_move = min(1, exp(-potential_difference / params->kT));
+
+	double P_move = min(1, exp(-potential_difference / params->kT)); // Probability of moving to new_x
 	if (uniform_rand() < P_move){
+        // Moves to new_x with probability P_move
 		return new_x;
 	}
-	return x;
+	return x; // If not moving to new_x, stay where currently are
 }
 
 DynamicsFun Dynamics_selector(char name[]){
+    DynamicsFun dyn_fun; // Function for the chosen dynamics
 	if (strcmp(name, "BAOAB_LIMIT") == 0){
-		DynamicsFun dyn_fun = &BAOAB_limit;
-		return dyn_fun;
+		dyn_fun = &BAOAB_limit;
 	}
 	else if (strcmp(name, "MONTE-CARLO") == 0){
-		DynamicsFun dyn_fun = &Monte_Carlo_step;
-		return dyn_fun;
+		dyn_fun = &Monte_Carlo_step;
 	}
-	else{
-		return NULL;
-	}
+	return dyn_fun;
 }
 
 
