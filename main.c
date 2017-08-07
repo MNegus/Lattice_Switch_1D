@@ -4,11 +4,7 @@
 #include <math.h>
 #include <string.h>
 #include "Parameters.h"
-#include "Potentials.h"
 #include "Dynamics.h"
-#include "Random.h"
-#include "MiscFunctions.h"
-
 
 // Returns the x-position of a particle in space given its displacement from the current well minima
 double x_pos(parameters *params, int well, double displacement){
@@ -64,7 +60,7 @@ void create_energy_diff_data(parameters *params, char *outputfilename){
 	
 
 	// Perform lattice switching method
-	for (long stepno=0; stepno < params->tot_steps; stepno++){
+	for (long stepno=1; stepno < params->tot_steps; stepno++){
 		if (cur_well == 0){
 			// Indicates that the particle was in the left well
 			no_left++;
@@ -91,6 +87,7 @@ void create_energy_diff_data(parameters *params, char *outputfilename){
 			x = lattice_switch(x, cur_well, stepno, no_left, outputfilename, params);
 		}
 	}
+
 }
 
 void calculate_energy_diff(double ret_arr[2], char *output_filename, double sample_portion, int sample_regularity){
@@ -169,20 +166,5 @@ int main(int argc, char **argv){
 	 params.potential_name, params.tot_steps, params.timestep, params.kT, params.mass,
 	  mean_of_simulations, std_error_of_simulations);
 	fclose(datastore_file);
-
-
-
-	// printf("%s\n", params.potential_name);
-	// printf("%ld\n", params.tot_timesteps);
-	// printf("%lf\n", params.timestep);
-	// printf("%d\n", params.start_well);
-	// printf("%d\n", params.switch_regularity);
-	// printf("%d\n", params.write_regularity);
-	// printf("%lf\n", params.kT);
-	// printf("%lf\n", params.mass);
-	// printf("%lf\n", params.minima[0]);
-	// printf("%lf\n", params.minima[1]);
-	// printf("%lf\n", params.shift_value);
-
 	return 0;
 }
