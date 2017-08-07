@@ -1,5 +1,6 @@
 import scipy.integrate as integrate
 import numpy as np
+import matplotlib.pyplot as plt
 
 def KT_Poten(x):
 	'Potential function from kinetic theory notes'
@@ -29,6 +30,14 @@ def DIFF_WIDTH_Poten(x):
 		return 50 * (x - np.sqrt(0.48)) * (x - np.sqrt(0.48)) - 2;
 
 
+def equilibrium_sol(poten_fun, kT):
+	'Returns the equilibrium solution function of a given potential and temperature'
+	normalisation_const = integrate.quad(lambda x: np.exp(-poten_fun(x) / kT), -np.inf, np.inf, epsabs=0.0000001, epsrel=0.0000001)
+	def eq_func(x):
+		return np.exp(-poten_fun(x) / kT) / normalisation_const[0]
+	return eq_func
+
+
 def exact_energy_diff(poten_fun, kT):
 	'Calculates the exact energy difference'
 	def integrand_func(x):
@@ -46,7 +55,14 @@ def output_range(poten_name, poten_fun, kT_range):
 		file.write(str(kT) + ", " + str(exact_energy_diff(poten_fun, kT)) + "\n")
 	file.close()
 
+if __name__ == "__main__":
+	eq_fun = equilibrium_sol(QUARTIC_Poten, 0.1)
+	x_left = np.linspace(-2, 0, 1000)
+	x_right = np.linspace(0, 2, 1000)
+	y_left = eq_fun(x_left)
+	y_right = eq_fun(x_right)
 
-output_range("KT", KT_Poten, np.arange(0.1, 1.1, 0.1))
-output_range("DIFF_WIDTH", DIFF_WIDTH_Poten, np.arange(0.1, 1.1, 0.1))
-output_range("QUARTIC", QUARTIC_Poten, np.arange(0.1, 1.1, 0.1))
+	plt.plot(x_left, y_left)
+	plt.show()
+	plt.plot(x_right, y_right)
+	plt.show()
