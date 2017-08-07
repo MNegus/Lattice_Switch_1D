@@ -13,22 +13,27 @@
 /* Structure to store relevant parameters */
 struct parameters{
 	/* Numerical parameters */
-	char dynamics_type[256];
-	char potential_name[256];
-	long tot_steps;
-	int start_well;
-	int switch_regularity;
-	int write_regularity;
+	char dynamics_type[256];  // Indicates which dynamics to move (either BAOAB limit, regular BAOAB or Monte-Carlo
+	char potential_name[256]; // Name of the potential (either KT, DIFF_WIDTH or QUARTIC)
+	long tot_steps;           // Total number of steps to run the simulation for
+	int start_well;           // Which well to start the walker in, 0 is left well, 1 is right well
+	int switch_regularity;    // How many dynamics steps between each switch attempt
+	int write_regularity;     // How many switch attempts between  the free energy is outputted
+
+	/* Bin parameters */
+    double x_min; // Position of far left bin
+    double x_max; // Position of far right bin
+    long n_bins;  // Number of bins
 	
 	/* Physical parameters */
-	double kT;
-	double mass;
-	double shift_value;
-	double minima[2];
+	double kT;          // Boltzmann constant (k) multiplied by the temperature (T)
+	double mass;        // Mass of particles
+	double shift_value; // Amount the right minima has to be shifted to be level with the left minima
+	double minima[2];   // x-coordinates of the left and right minima, respectively
 	
-	// BAOAB and BAOAB limit parameters
-	double timestep;
-	double R[2];
+	/* BAOAB and BAOAB limit parameters */
+	double timestep; // Physical timestep size
+    double R[2];     // Array to store two normally distributed numbers, used in the BAOAB method (see Dynamics.h)
 
 	// // Specific to the regular BAOAB method
 	// double friction_param;
@@ -37,11 +42,12 @@ struct parameters{
 	// double const3;
 
 	// Specific to the Monte-Carlo method
-	double jump_size;
+	double jump_size; // Jump size in x
 
-	PotentialFun Poten;
-	PotentialFun Poten_shifted;
-	PotentialFun Poten_deriv;
+    /* Function pointers to functions specific to the chosen potential */
+	PotentialFun Poten;         // Potential function
+	PotentialFun Poten_shifted; // Potential function with right well shifted
+	PotentialFun Poten_deriv;   // Derivative of potential function
 };
 
 typedef struct parameters parameters;
