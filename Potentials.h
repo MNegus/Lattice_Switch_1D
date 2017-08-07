@@ -37,7 +37,7 @@ double KT_Poten(double x){
 // External potential shifted
 double KT_Poten_shifted(double x){
     double pot_val; // Value of the potential at x
-    if (x <= -1){
+	if (x <= -1){
 		pot_val = 5 * (x + 2) * (x + 2);
 	}
 	else if (x <= 0) {
