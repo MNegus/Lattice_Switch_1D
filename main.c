@@ -37,20 +37,41 @@ double lattice_switch(double x, int cur_well, long stepno, long no_left, char *o
 	return x;
 }
 
+void add_to_bins(double x, long *bins, parameters *params){
+    if (x < params->x_min){
+        bins[0]++;
+    }
+    else if (x > params->x_max){
+        bins[params->nobins - 1]++;
+    }
+    else {
+        for (long j=1; j <= params->nobins; j++){
+            if (x < params->x_min + j * params->bin_width){
+                bins[j - 1]++;
+                break;
+            }
+        }
+    }
+}
 
 // Calculates the free energy different between states in the two wells of a given potential function
-void create_energy_diff_data(parameters *params, char *outputfilename){
+void create_energy_diff_data(parameters *params, char *energy_diff_filename, char *bins_filename){
 	srand ( time(NULL) ); // Seeds the random number generators
 	
 	double x = x_pos(params, params->start_well, 0); // x-position initially at the bottom of the starting well
-
 	long no_left = 0; // Number of timesteps that the particle is in the left well
-
 	int cur_well = params->start_well; // Indicates which well the particle is in (0 is left well, 1 is right well)
+    long *bins = malloc(sizeof(long) * (params->nobins)); // Array to store number of times each bin has been visited
 
-	remove(outputfilename);
+    for (long j = 0; j < params->nobins; j++){
+        bins[j] = 0;
+    }
 
-	DynamicsFun DynFun = Dynamics_selector(params->dynamics_type);
+    // Removes existing output files
+    remove(energy_diff_filename);
+    remove(bins_filename);
+
+	DynamicsFun DynFun = Dynamics_selector(params->dynamics_type); // Returns the desired dynamics function
 
 	if (strcmp(params->dynamics_type, "BAOAB_LIMIT") == 0){
 		// Generates normally distributed values for R, which stores the current value and the value at the next timestep
@@ -61,6 +82,8 @@ void create_energy_diff_data(parameters *params, char *outputfilename){
 
 	// Perform lattice switching method
 	for (long stepno=1; stepno < params->tot_steps; stepno++){
+        add_to_bins(x, bins, params);
+
 		if (cur_well == 0){
 			// Indicates that the particle was in the left well
 			no_left++;
@@ -84,9 +107,20 @@ void create_energy_diff_data(parameters *params, char *outputfilename){
 
 		// Attempts a lattice switch
 		if (stepno % params->switch_regularity == 0){
-			x = lattice_switch(x, cur_well, stepno, no_left, outputfilename, params);
+			x = lattice_switch(x, cur_well, stepno, no_left, energy_diff_filename, params);
 		}
 	}
+
+    FILE *bins_file = fopen(bins_filename, "w");
+    for (long j=1; j <= params->nobins; j++){
+        double bin_x_pos = params->x_min + j * params->bin_width;
+        fprintf(bins_file, "%g, %ld\n", bin_x_pos, bins[j - 1]);
+    }
+    fclose(bins_file);
+//    for (long j = 0; j < params->nobins; j++){
+//        printf("%ld\n", bins[j]);
+//    }
+    free(bins);
 
 }
 
@@ -160,11 +194,20 @@ int main(int argc, char **argv){
 	double mean_of_simulations = 0;
 	double std_error_of_simulations = 0;
 
+    /* Creates file names for outputting the energies and the bins */
+    char energy_diff_filename[50];
+    strcpy(energy_diff_filename,  output_filename);
+    strcat(energy_diff_filename, "_energies.csv");
+
+    char bins_filename[50];
+    strcpy(bins_filename, output_filename);
+    strcat(bins_filename, "_bins.csv");
+
     // Runs the procedure 10 times to calculate an average
 	for (int i = 0; i < 10; i++){
-		create_energy_diff_data(&params, output_filename); // Runs the lattice switch procedure to create data in file
+		create_energy_diff_data(&params, energy_diff_filename, bins_filename); // Runs the lattice switch procedure to create data in file
 		double ret_arr[2] = {0, 0}; // Array to store average and standard error
-		calculate_energy_diff(ret_arr, output_filename, 0.01, 100); // Calculates mean and standard error of the procedure
+		calculate_energy_diff(ret_arr, energy_diff_filename, 0.01, 100); // Calculates mean and standard error of the procedure
 		mean_of_simulations += ret_arr[0];
 		std_error_of_simulations += ret_arr[1] * ret_arr[1];
 	}
