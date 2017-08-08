@@ -75,13 +75,4 @@ def output_range(poten_name, poten_fun, kT_range):
 
 
 if __name__ == "__main__":
-    eq_fun = equilibrium_sol(QUARTIC_Poten, 0.1)
-    x_left = np.linspace(-2, 0, 1000)
-    x_right = np.linspace(0, 2, 1000)
-    y_left = eq_fun(x_left)
-    y_right = eq_fun(x_right)
-
-    plt.plot(x_left, y_left)
-    plt.show()
-    plt.plot(x_right, y_right)
-    plt.show()
+    print exact_energy_diff(QUARTIC_Poten, 0.5)
