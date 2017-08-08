@@ -21,9 +21,10 @@ struct parameters{
 	int write_regularity;     // How many switch attempts between  the free energy is outputted
 
 	/* Bin parameters */
-    double x_min; // Position of far left bin
-    double x_max; // Position of far right bin
-    long n_bins;  // Number of bins
+    double x_min;     // Position of far left bin
+    double x_max;     // Position of far right bin
+    long nobins;      // Number of bins
+    double bin_width; // Width of a bin
 	
 	/* Physical parameters */
 	double kT;          // Boltzmann constant (k) multiplied by the temperature (T)
@@ -105,6 +106,9 @@ void store_parameters(parameters *params, char *input_filename){
 	read_int(input_file,    &params->start_well);
 	read_int(input_file,    &params->switch_regularity);
 	read_int(input_file,    &params->write_regularity);
+    read_double(input_file, &params->x_min);
+    read_double(input_file, &params->x_max);
+    read_long(input_file,   &params->nobins);
 	read_double(input_file, &params->kT);
 	read_double(input_file, &params->mass);
 
@@ -126,6 +130,8 @@ void store_parameters(parameters *params, char *input_filename){
 
 	
 	fclose(input_file);
+
+    params->bin_width = (params->x_max - params->x_min) / params->nobins;
 
 	double poten_const_arr[] = {0, 0, 0}; // Array for potential specific constants
 	PotentialFun func_arr[] = {0, 0, 0}; // Array for potential functions 
