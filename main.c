@@ -17,15 +17,15 @@ double well_dis(parameters *params, int well, double x_position){
 }
 
 // Attempts a lattice switch from a given position in a well
-double lattice_switch(double x, int cur_well, long stepno, long no_left, char *outputfilename, parameters *params){
-	double dis = well_dis(params, cur_well, x); // Displacement from the current well
-	int oth_well = (cur_well + 1) % 2; // Other well
+double lattice_switch(double x, int *cur_well, long stepno, long no_left, char *outputfilename, parameters *params){
+	double dis = well_dis(params, *cur_well, x); // Displacement from the current well
+	int oth_well = (*cur_well + 1) % 2; // Other well
 	double diff_poten = (*params->Poten_shifted)(x_pos(params, oth_well, dis)) - \
 		(*params->Poten_shifted)(x); // Difference in potential
 	// Attempts a Monte-Carlo lattice switch
 	if (uniform_rand() < min(1, exp(-diff_poten))){
-		cur_well = oth_well;
-		x = x_pos(params, cur_well, dis);
+		*cur_well = oth_well;
+		x = x_pos(params, *cur_well, dis);
 	}
 
 	if ((stepno / params->switch_regularity) % params->write_regularity == 0){
@@ -107,7 +107,7 @@ void create_energy_diff_data(parameters *params, char *energy_diff_filename, cha
 
 		// Attempts a lattice switch
 		if (stepno % params->switch_regularity == 0){
-			x = lattice_switch(x, cur_well, stepno, no_left, energy_diff_filename, params);
+			x = lattice_switch(x, &cur_well, stepno, no_left, energy_diff_filename, params);
 		}
 	}
 
