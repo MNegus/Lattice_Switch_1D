@@ -48,7 +48,7 @@ double Monte_Carlo_step(double x, parameters *params){
 	double new_x = x + (2 * uniform_rand() - 1) * params->jump_size;
 
     // Difference in the potential between the new position and the current position
-	double potential_difference = params->Poten_shifted(new_x) - params->Poten_shifted(x);
+	double potential_difference = params->Poten(new_x) - params->Poten(x);
 
 	double P_move = min(1, exp(-potential_difference / params->kT)); // Probability of moving to new_x
 	if (uniform_rand() < P_move){
