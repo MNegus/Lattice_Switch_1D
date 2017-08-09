@@ -5,6 +5,7 @@
 #include <string.h>
 #include "Parameters.h"
 #include "Dynamics.h"
+#include "mt19937ar.h"
 
 // Returns the x-position of a particle in space given its displacement from the current well minima
 double x_pos(parameters *params, int well, double displacement){
@@ -23,7 +24,7 @@ double lattice_switch(double x, int *cur_well, long stepno, long no_left, char *
 	double diff_poten = (*params->Poten_shifted)(x_pos(params, oth_well, dis)) - \
 		(*params->Poten_shifted)(x); // Difference in potential
 	// Attempts a Monte-Carlo lattice switch
-	if (uniform_rand() < min(1, exp(-diff_poten))){
+	if (genrand_real1() < min(1, exp(-diff_poten))){
 		*cur_well = oth_well;
 		x = x_pos(params, *cur_well, dis);
 	}

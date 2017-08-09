@@ -14,6 +14,7 @@
 #include "Parameters.h"
 #include "Random.h"
 #include "MiscFunctions.h"
+#include "mt19937ar.h"
 
 #define PI 3.14159265358979323846264338327
 
@@ -45,13 +46,13 @@ double BAOAB_limit(double x, parameters *params){
 // Using Monte-Carlo method to determine where the particle jumps to
 double Monte_Carlo_step(double x, parameters *params){
     // Possible new position, uniformly distributed
-	double new_x = x + (2 * uniform_rand() - 1) * params->jump_size;
+	double new_x = x + (2 * genrand_real1() - 1) * params->jump_size;
 
     // Difference in the potential between the new position and the current position
 	double potential_difference = params->Poten(new_x) - params->Poten(x);
 
 	double P_move = min(1, exp(-potential_difference / params->kT)); // Probability of moving to new_x
-	if (uniform_rand() < P_move){
+	if (genrand_real1() < P_move){
         // Moves to new_x with probability P_move
 		return new_x;
 	}

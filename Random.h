@@ -8,16 +8,12 @@
 
 #define PI 3.14159265358979323846264338327
 
-
-// Returns a uniformly distributed random number in range (0,1)
-double uniform_rand(){
-	return (((double)rand()) / RAND_MAX);
-}
+#include "mt19937ar.h"
 
 // Returns a random normally distributed number, mean 0, standard deviation 1
 double box_muller_rand(){
-	double r1 = uniform_rand();
-	double r2 = uniform_rand();
+	double r1 = genrand_real3();
+	double r2 = genrand_real3();
 	return sqrt(-2 * log(r1)) * cos(2 * PI * r2);
 }
 
