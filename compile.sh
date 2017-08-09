@@ -1,1 +1,1 @@
-gcc -std=c99 -o baoab_limit_switch main.c -lm 
+gcc -std=c99 -o Lattice_Switch_1D main.c -lm 
