@@ -3,7 +3,7 @@
 #PBS -V
 #PBS -t 1-165
 
-POTENTIAL_NAME="DIFF_WIDTH"
+POTENTIAL_NAME="KT"
 WORK_DIRECTORY="/storage/molsim/phuhzr/Lattice_Switch_1D";
 INPUT_DIRECTORY=$WORK_DIRECTORY"/run_dir";
 OUTPUT_DIRECTORY="/home/theory/phuhzr/Documents/URSS/data_storage/"$POTENTIAL_NAME;
