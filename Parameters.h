@@ -18,7 +18,6 @@ struct parameters {
     long tot_steps;           // Total number of steps to run the simulation for
     int start_well;           // Which well to start the walker in, 0 is left well, 1 is right well
     int switch_regularity;    // How many dynamics steps between each switch attempt
-    int write_regularity;     // How many switch attempts between  the free energy is outputted
 
     /* Bin parameters */
     double x_min;     // Position of far left bin
@@ -103,7 +102,6 @@ void store_parameters(parameters *params, char *input_filename) {
     read_long(input_file, &params->tot_steps);
     read_int(input_file, &params->start_well);
     read_int(input_file, &params->switch_regularity);
-    read_int(input_file, &params->write_regularity);
     read_double(input_file, &params->x_min);
     read_double(input_file, &params->x_max);
     read_long(input_file, &params->nobins);
