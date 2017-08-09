@@ -128,9 +128,9 @@ int main(int argc, char **argv) {
 
     // ///////////////////////////////
     // CHANGE WHEN ACTUALLY SIMULATING
-    seed = (unsigned long) time(NULL);
+//    seed = (unsigned long) time(NULL);
     // ///////////////////////////////
-    
+
     int savebins = 1; // Variable for indicating if the data for bins will be saved or not
     if (strcmp(bins_filename, "NOBINS") == 0) savebins = 0;
 
