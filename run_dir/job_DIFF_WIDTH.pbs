@@ -1,7 +1,6 @@
 #!/bin/bash
 #PBS -l nodes=1:ppn=1,pvmem=256mb,walltime=24:00:00
 #PBS -V
-#PBS –q dovah
 #PBS -t 1-165
 
 POTENTIAL_NAME="DIFF_WIDTH"
@@ -15,7 +14,8 @@ cd $WORK_DIRECTORY
 INPUT_FILENAME=$INPUT_DIRECTORY"/input_"$POTENTIAL_NAME"_"$PBS_ARRAYID".txt";
 OUTPUT_FILENAME=$OUTPUT_DIRECTORY"/"$POTENTIAL_NAME"_data.csv"
 
-./Lattice_Switch_1D $INPUT_FILENAME $OUTPUT_FILENAME "NOBINS" $seed  
+echo $seed
+#./Lattice_Switch_1D $INPUT_FILENAME $OUTPUT_FILENAME "NOBINS" $seed  
 
 
 
