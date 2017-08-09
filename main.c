@@ -57,7 +57,7 @@ void add_to_bins(double x, long *bins, parameters *params){
 
 // Calculates the free energy different between states in the two wells of a given potential function
 void create_energy_diff_data(parameters *params, char *energy_diff_filename, char *bins_filename){
-	srand ( time(NULL) ); // Seeds the random number generators
+	init_genrand ( time(NULL) ); // Seeds the random number generators
 	
 	double x = x_pos(params, params->start_well, 0); // x-position initially at the bottom of the starting well
 	long no_left = 0; // Number of timesteps that the particle is in the left well
