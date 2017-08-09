@@ -152,15 +152,15 @@ int main(int argc, char **argv) {
         mean_energy_diff += energy_differences[i];
     }
 
-    energy_differences[10] = calc_energy_difference(&params, savebins,
+    energy_differences[9] = calc_energy_difference(&params, savebins,
                                                     bins_filename); // Runs the lattice switch procedure to create data in file
 
-    mean_energy_diff += energy_differences[10];
+    mean_energy_diff += energy_differences[9];
     mean_energy_diff /= 10;
     for (int i = 0; i < 10; i++) {
         std_error += (energy_differences[i] - mean_energy_diff) * (energy_differences[i] - mean_energy_diff);
     }
-    std_error = sqrt(std_error / 10);
+    std_error = sqrt(std_error) / 10;
     free(energy_differences);
 
     FILE *datastore_file = fopen(datastore_filename, "a");
