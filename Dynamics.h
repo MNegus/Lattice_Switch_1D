@@ -63,8 +63,7 @@ DynamicsFun Dynamics_selector(char name[]){
     DynamicsFun dyn_fun; // Function for the chosen dynamics
 	if (strcmp(name, "BAOAB_LIMIT") == 0){
 		dyn_fun = &BAOAB_limit;
-	}
-	else if (strcmp(name, "MONTE-CARLO") == 0){
+	} else if (strcmp(name, "MONTE-CARLO") == 0){
 		dyn_fun = &Monte_Carlo_step;
 	}
 	return dyn_fun;
