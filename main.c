@@ -24,11 +24,7 @@ double lattice_switch(double x, int *cur_well, long stepno, long no_left, char *
 	double diff_poten = (*params->Poten_shifted)(x_pos(params, oth_well, dis)) - \
 		(*params->Poten_shifted)(x); // Difference in potential
 	// Attempts a Monte-Carlo lattice switch
-<<<<<<< HEAD
 	if (genrand_real1() < min(1, exp(-diff_poten))){
-=======
-	if (uniform_rand() < min(1, exp(-diff_poten / params->kT))){
->>>>>>> master
 		*cur_well = oth_well;
 		x = x_pos(params, *cur_well, dis);
 	}
