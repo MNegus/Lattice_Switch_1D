@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
     double mean_energy_diff = 0;
     double std_error = 0;
 
-    double energy_differences[10];
+    double *energy_differences = malloc(sizeof(double) * 10);
 
     // Runs the procedure 10 times to calculate an average
     for (int i = 0; i < 9; i++) {
@@ -154,14 +154,14 @@ int main(int argc, char **argv) {
 
     energy_differences[10] = calc_energy_difference(&params, savebins,
                                                     bins_filename); // Runs the lattice switch procedure to create data in file
-    mean_energy_diff += energy_differences[10];
 
+    mean_energy_diff += energy_differences[10];
     mean_energy_diff /= 10;
     for (int i = 0; i < 10; i++) {
         std_error += (energy_differences[i] - mean_energy_diff) * (energy_differences[i] - mean_energy_diff);
     }
-
     std_error = sqrt(std_error / 10);
+    free(energy_differences);
 
     FILE *datastore_file = fopen(datastore_filename, "a");
     // Appends the data file with the mean and standard error, also listing the parameters associated with the run
