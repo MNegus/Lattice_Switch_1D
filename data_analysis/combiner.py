@@ -2,7 +2,7 @@ import sys
 
 
 def combine(poten_name):
-    fout = open("combined.csv", "w")
+    fout = open(poten_name + "_combined.csv", "w")
 
     fout.write("Potential Name, Dynamics Type, No of steps, Timestep, kT, Free energy diff, Std error\n")
 
