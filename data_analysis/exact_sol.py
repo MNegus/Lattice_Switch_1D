@@ -46,8 +46,10 @@ def equilibrium_sol(poten_fun, kT):
     return eq_func
 
 
-def exact_energy_diff(poten_fun, kT):
+def exact_energy_diff(poten_name, kT):
     'Calculates the exact energy difference'
+
+    poten_fun = potential_selector(poten_name, kT)[0]
 
     def integrand_func(x):
         return np.exp(-poten_fun(x) / kT)
