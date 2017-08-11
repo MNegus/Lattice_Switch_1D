@@ -17,4 +17,13 @@ double min(double x1, double x2) {
     return ret_var;
 }
 
+// "Extends the length of an array" by creating a new one
+double *longer_array(double *cur_arr, long cur_arr_length, long new_arr_length){
+    double *temp = malloc(sizeof(double) * new_arr_length);
+    for (long arr_index=0; arr_index < cur_arr_length; arr_index++){
+        temp[arr_index] = cur_arr[arr_index];
+    }
+    return temp;
+}
+
 #endif
