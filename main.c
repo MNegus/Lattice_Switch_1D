@@ -3,6 +3,7 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <float.h>
 #include "Parameters.h"
 #include "Dynamics.h"
 #include "mt19937ar.h"
@@ -15,6 +16,11 @@ double x_pos(double displacement, int well, parameters *params) {
 // Returns the displacement from the current well minima given its x position in space
 double well_dis(double x_position, int well, parameters *params) {
     return x_position - params->minima[well];
+}
+
+void calibrate_well(int *well, double x){
+    if (x < 0) *well = 0;
+    else *well = 1;
 }
 
 // Attempts a lattice switch from a given position in a well
@@ -31,25 +37,44 @@ double lattice_switch(double x, int *cur_well, parameters *params) {
     return x;
 }
 
-void add_to_bins(double x, long *bins, parameters *params) {
-    if (x < params->x_min) {
-        bins[0]++;
-    } else if (x > params->x_max) {
-        bins[params->nobins - 1]++;
+long get_bin_no(double position, double min_bin_pos, double max_bin_pos, double bin_width, long nobins){
+    long bin_no = -1;
+    if (position < min_bin_pos) {
+        bin_no = 0;
+    } else if (position > max_bin_pos) {
+        bin_no = nobins - 1;
     } else {
-        for (long j = 1; j <= params->nobins; j++) {
-            if (x < params->x_min + j * params->bin_width) {
-                bins[j - 1]++;
+        for (long j = 1; j <= nobins; j++) {
+            if (position < min_bin_pos + j * bin_width) {
+                bin_no = j - 1;
                 break;
             }
         }
     }
+
+    return bin_no;
+}
+
+void add_to_bins(double x, long *bins, parameters *params) {
+    long bin_no = get_bin_no(x, params->x_min, params->x_max, params->bin_width, params->nobins);
+    bins[bin_no]++;
+}
+
+// The difference in the potential at a given displacement away from each well
+double potential_difference(double displacement, parameters *params){
+    return (*params->Poten_shifted)(params->minima[0] + displacement) -\
+     (*params->Poten_shifted)(params->minima[1] + displacement);
+}
+
+// The derivative of the difference in the potential at a given displacement away from each well
+double potential_difference_deriv(double displacement, parameters *params){
+    return (*params->Poten_deriv)(params->minima[0] + displacement) -\
+     (*params->Poten_deriv)(params->minima[1] + displacement);
 }
 
 
-
 // Calculates the free energy different between states in the two wells of a given potential function
-double calc_energy_difference(int savebins, char *bins_filename, parameters *params) {
+double calc_free_energy_difference(int savebins, char *bins_filename, parameters *params) {
     double x = x_pos(0, params->start_well, params); // x-position initially at the bottom of the starting well
     long no_left = 0; // Number of timesteps that the particle is in the left well
     int cur_well = params->start_well; // Indicates which well the particle is in (0 is left well, 1 is right well)
@@ -119,6 +144,152 @@ double calc_energy_difference(int savebins, char *bins_filename, parameters *par
     return -params->kT * log((double) (no_left) / (params->tot_steps - no_left)) + params->shift_value;
 }
 
+//
+double biasing_function(double x, int cur_well, double *height_arr, double *gauss_positions,
+                        double gauss_width, long no_gaussians, parameters *params){
+    double ret_val = 0;
+    double dis = well_dis(x, cur_well, params);
+    for (long gauss_num=0; gauss_num < no_gaussians; gauss_num++){
+        double local_diff = potential_difference(dis, params) - gauss_positions[gauss_num];
+        ret_val += height_arr[gauss_num] * exp(-gauss_width * local_diff * local_diff);
+    }
+    return ret_val;
+}
+
+double biasing_function_deriv(double x, int cur_well, double *height_arr, double *gauss_positions,
+                              double gauss_width, long no_gaussians, parameters *params){
+    double ret_val = 0;
+    double dis = well_dis(x, cur_well, params);
+    for (long gauss_num=0; gauss_num < no_gaussians; gauss_num++){
+        double local_diff = potential_difference(dis, params) - gauss_positions[gauss_num];
+        ret_val += -2 * height_arr[gauss_num] * gauss_width * local_diff *\
+         exp(- gauss_width * local_diff * local_diff) * potential_difference_deriv(dis, params);
+    }
+    return ret_val;
+}
+
+double biased_BAOAB_limit(double x, int cur_well, double *height_arr, double *gauss_positions, double gauss_width,
+                          long no_gaussians, parameters *params){
+    x = x - params->timestep * \
+    ((*params->Poten_deriv)(x) +params->kT * biasing_function_deriv(x, cur_well, height_arr, gauss_positions,
+                                                                    gauss_width, no_gaussians, params)) / params->mass +\
+        sqrt(0.5 * params->kT * params->timestep / params->mass) * (params->R[0] + params->R[1]);
+
+    params->R[0] = params->R[1]; // Current value of R becomes the next one
+    params->R[1] = box_muller_rand(); // Next value for R is drawn from a normal distribution
+
+    return x;
+
+}
+
+
+// Implements the lattice switch method but with biasing
+double biased_simulation(double initial_f, double min_f, double gauss_width, long no_biasbins, parameters *params){
+    double x = x_pos(0, params->start_well, params); // x-position initially at the bottom of the starting well
+    int cur_well = params->start_well; // Indicates which well the particle is in (0 is left well, 1 is right well)
+
+    double f = initial_f; // f is variable used to decrease the Gaussian heights
+    double cur_height = params->kT * log(f); // Height of the next Gaussian to be put down
+
+    long max_arrays_length = 1000; // Current length of height and Gaussian position arrays, let to be large
+    double *height_arr = malloc(sizeof(double) * max_arrays_length); // Array to store the heights of each Gaussian
+    double *gauss_positions = malloc(sizeof(double) * max_arrays_length); // Array to store the positions of each Gaussian
+    long no_gaussians = 0; // Number of Gaussians that have currently been put down
+
+    long *pot_diff_histogram = malloc(sizeof(long) * no_biasbins); // Histogram for where the walker visits in potential_difference space
+    for (long bin_no=0; bin_no < no_biasbins; bin_no++) pot_diff_histogram[bin_no] = 0;
+
+
+    /* Finds the bounds for the potential difference space we are interested in */
+    double max_potential_difference = -DBL_MAX;
+    double min_potential_difference = DBL_MAX;
+
+    double min_displacement = -params->minima[1]; // Displacement can be as far left until the right well meets the origin
+    double max_displacement = -params->minima[0]; // Displacement can be as far right until the left well meets the origin
+
+    double dx = (max_displacement - min_displacement) / 100000; // Increment in x to be used in the following loop
+    for (double dis=min_displacement; dis <= max_displacement; dis += dx){
+        double cur_poten_diff = potential_difference(dis, params); // Difference in the wells given current displacements
+        if (cur_poten_diff > max_potential_difference){
+            max_potential_difference = cur_poten_diff;
+        }
+        if (cur_poten_diff < min_potential_difference){
+            min_potential_difference = cur_poten_diff;
+        }
+    }
+
+    double bin_width = (max_potential_difference - min_potential_difference) / no_biasbins; // Width of bins in potential difference space
+
+
+    params->R[0] = box_muller_rand();
+    params->R[1] = box_muller_rand();
+
+    long HIST_ATTEMPTS = 0;
+
+    long gauss_regularity = 20; // Number of timesteps between each Gaussian being placed
+
+    /* Finds the optimum set of Gaussian positions and heights to give a flat biasing distribution */
+    while (f > min_f){
+        int flat_histogram = 0; // Used as Boolean to indiciate when we have a flat histogram
+        long tot_steps = 0; // Total number of timesteps with current histogram
+        while (flat_histogram != 1){
+            double cur_poten_diff; // Variable to store potential diff at current timestep
+
+            HIST_ATTEMPTS++;
+            if (HIST_ATTEMPTS % 3000 == 0){
+                printf("%ld\n", HIST_ATTEMPTS);
+                for (long bin_no = 0; bin_no < no_biasbins; bin_no++) printf("%ld\n", pot_diff_histogram[bin_no]);
+                exit(0);
+            }
+
+            // Performs a set number of timesteps
+            for (long j = 0; j < gauss_regularity; j++){
+                // Adds to the potential difference histogram with the current position
+                cur_poten_diff = potential_difference(well_dis(x, cur_well, params), params);
+                pot_diff_histogram[get_bin_no(cur_poten_diff, min_potential_difference,
+                                              max_potential_difference, bin_width, no_biasbins)]++;
+
+                if (genrand_real1() < 0.1) {
+                    // Attempts a lattice switch with probability 0.1
+                    lattice_switch(x, &cur_well, params);
+                } else {
+                    // Else, performs a regular dynamics step
+                    x = biased_BAOAB_limit(x, cur_well, height_arr, gauss_positions, gauss_width, no_gaussians, params);
+                }
+                calibrate_well(&cur_well, x); // Recalibrates well
+            }
+
+            height_arr[no_gaussians]      = cur_height;
+            gauss_positions[no_gaussians] = cur_poten_diff;
+
+            no_gaussians++;
+            if (no_gaussians >= max_arrays_length){
+                // If we've reached the limit for the arrays
+                height_arr      = longer_array(height_arr, max_arrays_length, max_arrays_length + 1000);
+                gauss_positions = longer_array(gauss_positions, max_arrays_length, max_arrays_length + 1000);
+                max_arrays_length += 1000;
+
+            }
+
+            double hist_mean = tot_steps / no_biasbins;
+            int all_bins_above_threshold = 1;
+            for (long bin_no = 0; bin_no < no_biasbins; bin_no++){
+                if (pot_diff_histogram[bin_no] <= 0.8 * hist_mean){
+                    all_bins_above_threshold = 0;
+                    break;
+                }
+            }
+            flat_histogram = all_bins_above_threshold;
+        }
+
+        f = sqrt(f);
+        for (long bin_no=0; bin_no < no_biasbins; bin_no++) pot_diff_histogram[bin_no] = 0;
+    }
+
+
+    return 0.1;
+}
+
 int main(int argc, char **argv) {
     char *input_filename = argv[1]; // Name of the parameter input file
     char *datastore_filename = argv[2]; // Name of the file to store final calculated data
@@ -130,7 +301,7 @@ int main(int argc, char **argv) {
 
     // ///////////////////////////////
     // CHANGE WHEN ACTUALLY SIMULATING
-//    seed = (unsigned long) time(NULL);
+    seed = (unsigned long) time(NULL);
     // ///////////////////////////////
 
     int savebins = 1; // Variable for indicating if the data for bins will be saved or not
@@ -142,37 +313,46 @@ int main(int argc, char **argv) {
     parameters params; // Struct for storing parameters
     store_parameters(&params, input_filename); // Fills the parameters struct with data from input file
 
-    double mean_energy_diff = 0;
-    double std_error = 0;
 
-    double *energy_differences = malloc(sizeof(double) * 10);
+    double init_f = exp(1 / params.kT);
+    double min_f = 1.1;
+    double gauss_width = 0.175;
+    long no_biasbins = 1000;
+    biased_simulation(init_f, min_f, gauss_width, no_biasbins, &params);
 
-    // Runs the procedure 10 times to calculate an average
-    for (int i = 0; i < 9; i++) {
-        energy_differences[i] = calc_energy_difference(0, bins_filename, &params); // Runs the lattice switch procedure to create data in file
-        mean_energy_diff += energy_differences[i];
-    }
 
-    energy_differences[9] = calc_energy_difference(savebins, bins_filename, &params); // Runs the lattice switch procedure to create data in file
-
-    mean_energy_diff += energy_differences[9];
-    mean_energy_diff /= 10;
-    for (int i = 0; i < 10; i++) {
-        std_error += (energy_differences[i] - mean_energy_diff) * (energy_differences[i] - mean_energy_diff);
-    }
-    std_error = sqrt(std_error) / 10;
-    free(energy_differences);
-
-    FILE *datastore_file = fopen(datastore_filename, "a");
-    // Appends the data file with the mean and standard error, also listing the parameters associated with the run
-    if (strcmp(params.dynamics_type, "BAOAB_LIMIT") == 0) {
-        fprintf(datastore_file, "%s, %s, %ld, %lf, %lf, %g, %g\n", params.potential_name, params.dynamics_type,
-                params.tot_steps, params.timestep, params.kT, mean_energy_diff, std_error);
-    } else if (strcmp(params.dynamics_type, "MONTE-CARLO") == 0) {
-        fprintf(datastore_file, "%s, %s, %ld, %lf, %lf, %g, %g\n", params.potential_name, params.dynamics_type,
-                params.tot_steps, params.jump_size, params.kT, mean_energy_diff, std_error);
-    }
-
-    fclose(datastore_file);
+//
+//    double mean_energy_diff = 0;
+//    double std_error = 0;
+//
+//    double *energy_differences = malloc(sizeof(double) * 10);
+//
+//    // Runs the procedure 10 times to calculate an average
+//    for (int i = 0; i < 9; i++) {
+//        energy_differences[i] = calc_free_energy_difference(0, bins_filename, &params); // Runs the lattice switch procedure to create data in file
+//        mean_energy_diff += energy_differences[i];
+//    }
+//
+//    energy_differences[9] = calc_free_energy_difference(savebins, bins_filename, &params); // Runs the lattice switch procedure to create data in file
+//
+//    mean_energy_diff += energy_differences[9];
+//    mean_energy_diff /= 10;
+//    for (int i = 0; i < 10; i++) {
+//        std_error += (energy_differences[i] - mean_energy_diff) * (energy_differences[i] - mean_energy_diff);
+//    }
+//    std_error = sqrt(std_error) / 10;
+//    free(energy_differences);
+//
+//    FILE *datastore_file = fopen(datastore_filename, "a");
+//    // Appends the data file with the mean and standard error, also listing the parameters associated with the run
+//    if (strcmp(params.dynamics_type, "BAOAB_LIMIT") == 0) {
+//        fprintf(datastore_file, "%s, %s, %ld, %lf, %lf, %g, %g\n", params.potential_name, params.dynamics_type,
+//                params.tot_steps, params.timestep, params.kT, mean_energy_diff, std_error);
+//    } else if (strcmp(params.dynamics_type, "MONTE-CARLO") == 0) {
+//        fprintf(datastore_file, "%s, %s, %ld, %lf, %lf, %g, %g\n", params.potential_name, params.dynamics_type,
+//                params.tot_steps, params.jump_size, params.kT, mean_energy_diff, std_error);
+//    }
+//
+//    fclose(datastore_file);
     return 0;
 }
