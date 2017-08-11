@@ -18,7 +18,7 @@ double well_dis(double x_position, int well, parameters *params) {
     return x_position - params->minima[well];
 }
 
-void calibrate_well(int *well, double x){
+void calibrate_well(int *well, double x) {
     if (x < 0) *well = 0;
     else *well = 1;
 }
@@ -37,7 +37,7 @@ double lattice_switch(double x, int *cur_well, parameters *params) {
     return x;
 }
 
-long get_bin_no(double position, double min_bin_pos, double max_bin_pos, double bin_width, long nobins){
+long get_bin_no(double position, double min_bin_pos, double max_bin_pos, double bin_width, long nobins) {
     long bin_no = -1;
     if (position < min_bin_pos) {
         bin_no = 0;
@@ -61,14 +61,14 @@ void add_to_bins(double x, long *bins, parameters *params) {
 }
 
 // The difference in the potential at a given displacement away from each well
-double potential_difference(double displacement, parameters *params){
-    return (*params->Poten_shifted)(params->minima[0] + displacement) -\
+double potential_difference(double displacement, parameters *params) {
+    return (*params->Poten_shifted)(params->minima[0] + displacement) - \
      (*params->Poten_shifted)(params->minima[1] + displacement);
 }
 
 // The derivative of the difference in the potential at a given displacement away from each well
-double potential_difference_deriv(double displacement, parameters *params){
-    return (*params->Poten_deriv)(params->minima[0] + displacement) -\
+double potential_difference_deriv(double displacement, parameters *params) {
+    return (*params->Poten_deriv)(params->minima[0] + displacement) - \
      (*params->Poten_deriv)(params->minima[1] + displacement);
 }
 
@@ -146,10 +146,10 @@ double calc_free_energy_difference(int savebins, char *bins_filename, parameters
 
 //
 double biasing_function(double x, int cur_well, double *height_arr, double *gauss_positions,
-                        double gauss_width, long no_gaussians, parameters *params){
+                        double gauss_width, long no_gaussians, parameters *params) {
     double ret_val = 0;
     double dis = well_dis(x, cur_well, params);
-    for (long gauss_num=0; gauss_num < no_gaussians; gauss_num++){
+    for (long gauss_num = 0; gauss_num < no_gaussians; gauss_num++) {
         double local_diff = potential_difference(dis, params) - gauss_positions[gauss_num];
         ret_val += height_arr[gauss_num] * exp(-gauss_width * local_diff * local_diff);
     }
@@ -157,22 +157,23 @@ double biasing_function(double x, int cur_well, double *height_arr, double *gaus
 }
 
 double biasing_function_deriv(double x, int cur_well, double *height_arr, double *gauss_positions,
-                              double gauss_width, long no_gaussians, parameters *params){
+                              double gauss_width, long no_gaussians, parameters *params) {
     double ret_val = 0;
     double dis = well_dis(x, cur_well, params);
-    for (long gauss_num=0; gauss_num < no_gaussians; gauss_num++){
+    for (long gauss_num = 0; gauss_num < no_gaussians; gauss_num++) {
         double local_diff = potential_difference(dis, params) - gauss_positions[gauss_num];
-        ret_val += -2 * height_arr[gauss_num] * gauss_width * local_diff *\
-         exp(- gauss_width * local_diff * local_diff) * potential_difference_deriv(dis, params);
+        ret_val += -2 * height_arr[gauss_num] * gauss_width * local_diff * \
+         exp(-gauss_width * local_diff * local_diff) * potential_difference_deriv(dis, params);
     }
     return ret_val;
 }
 
 double biased_BAOAB_limit(double x, int cur_well, double *height_arr, double *gauss_positions, double gauss_width,
-                          long no_gaussians, parameters *params){
+                          long no_gaussians, parameters *params) {
     x = x - params->timestep * \
-    ((*params->Poten_deriv)(x) +params->kT * biasing_function_deriv(x, cur_well, height_arr, gauss_positions,
-                                                                    gauss_width, no_gaussians, params)) / params->mass +\
+    ((*params->Poten_deriv)(x) + params->kT * biasing_function_deriv(x, cur_well, height_arr, gauss_positions,
+                                                                     gauss_width, no_gaussians, params)) /
+            params->mass + \
         sqrt(0.5 * params->kT * params->timestep / params->mass) * (params->R[0] + params->R[1]);
 
     params->R[0] = params->R[1]; // Current value of R becomes the next one
@@ -184,7 +185,7 @@ double biased_BAOAB_limit(double x, int cur_well, double *height_arr, double *ga
 
 
 // Implements the lattice switch method but with biasing
-double biased_simulation(double initial_f, double min_f, double gauss_width, long no_biasbins, parameters *params){
+double biased_simulation(double initial_f, double min_f, double gauss_width, long no_biasbins, parameters *params) {
     double x = x_pos(0, params->start_well, params); // x-position initially at the bottom of the starting well
     int cur_well = params->start_well; // Indicates which well the particle is in (0 is left well, 1 is right well)
 
@@ -193,11 +194,13 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
 
     long max_arrays_length = 1000; // Current length of height and Gaussian position arrays, let to be large
     double *height_arr = malloc(sizeof(double) * max_arrays_length); // Array to store the heights of each Gaussian
-    double *gauss_positions = malloc(sizeof(double) * max_arrays_length); // Array to store the positions of each Gaussian
+    double *gauss_positions = malloc(
+            sizeof(double) * max_arrays_length); // Array to store the positions of each Gaussian
     long no_gaussians = 0; // Number of Gaussians that have currently been put down
 
-    long *pot_diff_histogram = malloc(sizeof(long) * no_biasbins); // Histogram for where the walker visits in potential_difference space
-    for (long bin_no=0; bin_no < no_biasbins; bin_no++) pot_diff_histogram[bin_no] = 0;
+    long *pot_diff_histogram = malloc(
+            sizeof(long) * no_biasbins); // Histogram for where the walker visits in potential_difference space
+    for (long bin_no = 0; bin_no < no_biasbins; bin_no++) pot_diff_histogram[bin_no] = 0;
 
 
     /* Finds the bounds for the potential difference space we are interested in */
@@ -208,17 +211,19 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
     double max_displacement = -params->minima[0]; // Displacement can be as far right until the left well meets the origin
 
     double dx = (max_displacement - min_displacement) / 100000; // Increment in x to be used in the following loop
-    for (double dis=min_displacement; dis <= max_displacement; dis += dx){
-        double cur_poten_diff = potential_difference(dis, params); // Difference in the wells given current displacements
-        if (cur_poten_diff > max_potential_difference){
+    for (double dis = min_displacement; dis <= max_displacement; dis += dx) {
+        double cur_poten_diff = potential_difference(dis,
+                                                     params); // Difference in the wells given current displacements
+        if (cur_poten_diff > max_potential_difference) {
             max_potential_difference = cur_poten_diff;
         }
-        if (cur_poten_diff < min_potential_difference){
+        if (cur_poten_diff < min_potential_difference) {
             min_potential_difference = cur_poten_diff;
         }
     }
 
-    double bin_width = (max_potential_difference - min_potential_difference) / no_biasbins; // Width of bins in potential difference space
+    double bin_width = (max_potential_difference - min_potential_difference) /
+                       no_biasbins; // Width of bins in potential difference space
 
 
     params->R[0] = box_muller_rand();
@@ -229,21 +234,21 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
     long gauss_regularity = 20; // Number of timesteps between each Gaussian being placed
 
     /* Finds the optimum set of Gaussian positions and heights to give a flat biasing distribution */
-    while (f > min_f){
+    while (f > min_f) {
         int flat_histogram = 0; // Used as Boolean to indiciate when we have a flat histogram
         long tot_steps = 0; // Total number of timesteps with current histogram
-        while (flat_histogram != 1){
+        while (flat_histogram != 1) {
             double cur_poten_diff; // Variable to store potential diff at current timestep
 
             HIST_ATTEMPTS++;
-            if (HIST_ATTEMPTS % 3000 == 0){
+            if (HIST_ATTEMPTS % 3000 == 0) {
                 printf("%ld\n", HIST_ATTEMPTS);
                 for (long bin_no = 0; bin_no < no_biasbins; bin_no++) printf("%ld\n", pot_diff_histogram[bin_no]);
                 exit(0);
             }
 
             // Performs a set number of timesteps
-            for (long j = 0; j < gauss_regularity; j++){
+            for (long j = 0; j < gauss_regularity; j++) {
                 // Adds to the potential difference histogram with the current position
                 cur_poten_diff = potential_difference(well_dis(x, cur_well, params), params);
                 pot_diff_histogram[get_bin_no(cur_poten_diff, min_potential_difference,
@@ -259,13 +264,13 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
                 calibrate_well(&cur_well, x); // Recalibrates well
             }
 
-            height_arr[no_gaussians]      = cur_height;
+            height_arr[no_gaussians] = cur_height;
             gauss_positions[no_gaussians] = cur_poten_diff;
 
             no_gaussians++;
-            if (no_gaussians >= max_arrays_length){
+            if (no_gaussians >= max_arrays_length) {
                 // If we've reached the limit for the arrays
-                height_arr      = longer_array(height_arr, max_arrays_length, max_arrays_length + 1000);
+                height_arr = longer_array(height_arr, max_arrays_length, max_arrays_length + 1000);
                 gauss_positions = longer_array(gauss_positions, max_arrays_length, max_arrays_length + 1000);
                 max_arrays_length += 1000;
 
@@ -273,8 +278,8 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
 
             double hist_mean = tot_steps / no_biasbins;
             int all_bins_above_threshold = 1;
-            for (long bin_no = 0; bin_no < no_biasbins; bin_no++){
-                if (pot_diff_histogram[bin_no] <= 0.8 * hist_mean){
+            for (long bin_no = 0; bin_no < no_biasbins; bin_no++) {
+                if (pot_diff_histogram[bin_no] <= 0.8 * hist_mean) {
                     all_bins_above_threshold = 0;
                     break;
                 }
@@ -283,7 +288,7 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
         }
 
         f = sqrt(f);
-        for (long bin_no=0; bin_no < no_biasbins; bin_no++) pot_diff_histogram[bin_no] = 0;
+        for (long bin_no = 0; bin_no < no_biasbins; bin_no++) pot_diff_histogram[bin_no] = 0;
     }
 
 
