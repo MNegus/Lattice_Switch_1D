@@ -8,25 +8,25 @@
 #include "mt19937ar.h"
 
 // Returns the x-position of a particle in space given its displacement from the current well minima
-double x_pos(parameters *params, int well, double displacement) {
+double x_pos(double displacement, int well, parameters *params) {
     return displacement + params->minima[well];
 }
 
 // Returns the displacement from the current well minima given its x position in space
-double well_dis(parameters *params, int well, double x_position) {
+double well_dis(double x_position, int well, parameters *params) {
     return x_position - params->minima[well];
 }
 
 // Attempts a lattice switch from a given position in a well
 double lattice_switch(double x, int *cur_well, parameters *params) {
-    double dis = well_dis(params, *cur_well, x); // Displacement from the current well
+    double dis = well_dis(x, *cur_well, params); // Displacement from the current well
     int oth_well = (*cur_well + 1) % 2; // Other well
-    double diff_poten = (*params->Poten_shifted)(x_pos(params, oth_well, dis)) - \
+    double diff_poten = (*params->Poten_shifted)(x_pos(dis, oth_well, params)) - \
         (*params->Poten_shifted)(x); // Difference in potential
     // Attempts a Monte-Carlo lattice switch
     if (genrand_real1() < min(1, exp(-diff_poten / params->kT))) {
         *cur_well = oth_well;
-        x = x_pos(params, *cur_well, dis);
+        x = x_pos(dis, *cur_well, params);
     }
     return x;
 }
@@ -46,9 +46,11 @@ void add_to_bins(double x, long *bins, parameters *params) {
     }
 }
 
+
+
 // Calculates the free energy different between states in the two wells of a given potential function
-double calc_energy_difference(parameters *params, int savebins, char *bins_filename) {
-    double x = x_pos(params, params->start_well, 0); // x-position initially at the bottom of the starting well
+double calc_energy_difference(int savebins, char *bins_filename, parameters *params) {
+    double x = x_pos(0, params->start_well, params); // x-position initially at the bottom of the starting well
     long no_left = 0; // Number of timesteps that the particle is in the left well
     int cur_well = params->start_well; // Indicates which well the particle is in (0 is left well, 1 is right well)
 
@@ -147,13 +149,11 @@ int main(int argc, char **argv) {
 
     // Runs the procedure 10 times to calculate an average
     for (int i = 0; i < 9; i++) {
-        energy_differences[i] = calc_energy_difference(&params, 0,
-                                                       bins_filename); // Runs the lattice switch procedure to create data in file
+        energy_differences[i] = calc_energy_difference(0, bins_filename, &params); // Runs the lattice switch procedure to create data in file
         mean_energy_diff += energy_differences[i];
     }
 
-    energy_differences[9] = calc_energy_difference(&params, savebins,
-                                                    bins_filename); // Runs the lattice switch procedure to create data in file
+    energy_differences[9] = calc_energy_difference(savebins, bins_filename, &params); // Runs the lattice switch procedure to create data in file
 
     mean_energy_diff += energy_differences[9];
     mean_energy_diff /= 10;
