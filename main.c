@@ -149,8 +149,8 @@ double biasing_function(double x, int cur_well, parameters *params) {
     double ret_val = 0;
     double dis = well_dis(x, cur_well, params);
     for (long gauss_num = 0; gauss_num < params->no_gaussians; gauss_num++) {
-        double local_diff = potential_difference(dis, params) - params->gauss_positions[gauss_num];
-        ret_val += params->height_arr[gauss_num] * exp(-params->gauss_width * local_diff * local_diff);
+        ret_val += gaussian(potential_difference(dis, params), params->gauss_width,
+                            params->gauss_positions[gauss_num], params->height_arr[gauss_num]);
     }
     return ret_val;
 }
@@ -159,9 +159,9 @@ double biasing_function_deriv(double x, int cur_well, parameters *params) {
     double ret_val = 0;
     double dis = well_dis(x, cur_well, params);
     for (long gauss_num = 0; gauss_num < params->no_gaussians; gauss_num++) {
-        double local_diff = potential_difference(dis, params) - params->gauss_positions[gauss_num];
-        ret_val += -2 * params->height_arr[gauss_num] * params->gauss_width * local_diff * \
-         exp(-params->gauss_width * local_diff * local_diff) * potential_difference_deriv(dis, params);
+        ret_val += potential_difference_deriv(dis, params) *\
+         gaussian_deriv(potential_difference(dis, params), params->gauss_width,
+                        params->gauss_positions[gauss_num], params->height_arr[gauss_num]);
     }
     return ret_val;
 }
@@ -203,13 +203,12 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
     double max_potential_difference = -DBL_MAX;
     double min_potential_difference = DBL_MAX;
 
-    double min_displacement = -params->minima[1]; // Displacement can be as far left until the right well meets the origin
-    double max_displacement = -params->minima[0]; // Displacement can be as far right until the left well meets the origin
+    double min_displacement = well_dis(params->x_min, 0, params); // Displacement can be as far left until the right well meets the origin
+    double max_displacement = well_dis(params->x_max, 1, params); // Displacement can be as far right until the left well meets the origin
 
     double dx = (max_displacement - min_displacement) / 100000; // Increment in x to be used in the following loop
     for (double dis = min_displacement; dis <= max_displacement; dis += dx) {
-        double cur_poten_diff = potential_difference(dis,
-                                                     params); // Difference in the wells given current displacements
+        double cur_poten_diff = potential_difference(dis, params); // Difference in the wells given current displacements
         if (cur_poten_diff > max_potential_difference) {
             max_potential_difference = cur_poten_diff;
         }
@@ -217,7 +216,8 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
             min_potential_difference = cur_poten_diff;
         }
     }
-    printf("Minimum potential difference = %lf\n", min_potential_difference);
+
+    printf("%lf %lf\n", min_potential_difference, max_potential_difference);
 
     double bin_width = (max_potential_difference - min_potential_difference) /
                        no_biasbins; // Width of bins in potential difference space
@@ -242,25 +242,38 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
 
 
             HIST_ATTEMPTS++;
-            if (HIST_ATTEMPTS % 1 == 0) {
+            if (HIST_ATTEMPTS % 3 == 0) {
+//                FILE *bias_out = fopen("biased_data.csv", "w");
+//                printf("%ld\n", HIST_ATTEMPTS);
+//                double x_min = -2.2;
+//                double x_max = -1.8;
+//                double dx = (x_max - x_min) / 10000;
+//                double cur_x = x_min;
+//                int cur_well;
+//                calibrate_well(&cur_well, cur_x);
+//                double biased_val = (*params->Poten_shifted)(cur_x) + biasing_function(x, cur_well, params);
+//                for (long i = 0; i < 10000; i++){
+//                    fprintf(bias_out, "%lf, %lf\n", cur_x, biased_val);
+//                    cur_x += dx;
+//                    calibrate_well(&cur_well, cur_x);
+//                    biased_val =  biasing_function(x, cur_well, params);
+//                }
+//                fclose(bias_out);
+                printf("%lf %lf\n", params->gauss_positions[0], params->height_arr[0]);
                 FILE *bias_out = fopen("biased_data.csv", "w");
-                printf("%ld\n", HIST_ATTEMPTS);
-                double x_min = -2.2;
-                double x_max = -1.8;
+                double x_min = params->minima[0] + min_displacement;
+                double x_max = params->minima[1] + max_displacement;
                 double dx = (x_max - x_min) / 10000;
-                double cur_x = x_min;
-                int cur_well;
-                calibrate_well(&cur_well, cur_x);
-                double biased_val = (*params->Poten_shifted)(cur_x) + biasing_function(x, cur_well, params);
-                for (long i = 0; i < 10000; i++){
-                    fprintf(bias_out, "%lf, %lf\n", cur_x, biased_val);
-                    cur_x += dx;
-                    calibrate_well(&cur_well, cur_x);
-                    biased_val =  biasing_function(x, cur_well, params);
+                double plot_x = x_min;
+                for (long i=0; i < 10000; i++){
+                    double gauss_val = gaussian(plot_x, params->gauss_width, params->gauss_positions[0], params->height_arr[0]);
+                    double tot_val = (*params->Poten_shifted)(plot_x) + gauss_val;
+                    fprintf(bias_out, "%lf, %lf\n", plot_x, tot_val);
+                    plot_x += dx;
                 }
                 fclose(bias_out);
-//
-//
+
+
                 exit(0);
             }
 
@@ -285,8 +298,8 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
                 if (x < absolute_minimum_x) absolute_minimum_x = x;
             }
 
-            printf("My x value is: %lf\n", x);
-            printf("My bin number is: %ld\n", get_bin_no(cur_poten_diff, min_potential_difference, max_potential_difference, bin_width, no_biasbins));
+//            printf("My x value is: %lf\n", x);
+//            printf("My bin number is: %ld\n", get_bin_no(cur_poten_diff, min_potential_difference, max_potential_difference, bin_width, no_biasbins));
             params->height_arr[params->no_gaussians] = cur_height;
             params->gauss_positions[params->no_gaussians] = cur_poten_diff;
 
