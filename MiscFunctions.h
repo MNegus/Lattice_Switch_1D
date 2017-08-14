@@ -6,6 +6,8 @@
 #ifndef MISCFUNCTIONS_H
 #define MISCFUNCTIONS_H
 
+#include <math.h>
+
 // Returns the minimum of two double values
 double min(double x1, double x2) {
     double ret_var; // Variable to return
@@ -24,6 +26,17 @@ double *longer_array(double *cur_arr, long cur_arr_length, long new_arr_length){
         temp[arr_index] = cur_arr[arr_index];
     }
     return temp;
+}
+
+
+// Gaussian function with given width, height and mean
+double gaussian(double position, double width, double mean, double height){
+    return height * exp(-width * (position - mean) * (position - mean));
+}
+
+// Derivative of a gaussian with given width, height and mean
+double gaussian_deriv(double position, double width, double mean, double height){
+    return -2 * width * (position - mean) * gaussian(position, width, mean, height);
 }
 
 #endif
