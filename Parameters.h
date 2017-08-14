@@ -48,6 +48,15 @@ struct parameters {
     PotentialFun Poten;         // Potential function
     PotentialFun Poten_shifted; // Potential function with right well shifted
     PotentialFun Poten_deriv;   // Derivative of potential function
+
+
+    /* Biasing variables */
+    long max_arrays_length;
+    double *height_arr;
+    double *gauss_positions;
+    long no_gaussians;
+    long *pot_diff_histogram;
+    double gauss_width;
 };
 
 typedef struct parameters parameters;
