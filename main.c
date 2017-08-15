@@ -233,6 +233,7 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
     double absolute_minimum_x = 10;
     double absolute_maximum_x = -10;
 
+    FILE *poten_diff_file = fopen("pot_diff.csv", "w");
     /* Finds the optimum set of Gaussian positions and heights to give a flat biasing distribution */
     while (f > min_f) {
         int flat_histogram = 0; // Used as Boolean to indiciate when we have a flat histogram
@@ -241,52 +242,68 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
             double cur_poten_diff; // Variable to store potential diff at current timestep
 
 
-            HIST_ATTEMPTS++;
-            if (HIST_ATTEMPTS % 3 == 0) {
-//                FILE *bias_out = fopen("biased_data.csv", "w");
-//                printf("%ld\n", HIST_ATTEMPTS);
-//                double x_min = -2.2;
-//                double x_max = -1.8;
-//                double dx = (x_max - x_min) / 10000;
-//                double cur_x = x_min;
-//                int cur_well;
-//                calibrate_well(&cur_well, cur_x);
-//                double biased_val = (*params->Poten_shifted)(cur_x) + biasing_function(x, cur_well, params);
-//                for (long i = 0; i < 10000; i++){
-//                    fprintf(bias_out, "%lf, %lf\n", cur_x, biased_val);
-//                    cur_x += dx;
-//                    calibrate_well(&cur_well, cur_x);
-//                    biased_val =  biasing_function(x, cur_well, params);
-//                }
-//                fclose(bias_out);
-                printf("%lf %lf\n", params->gauss_positions[0], params->height_arr[0]);
-                FILE *bias_out = fopen("biased_data.csv", "w");
-                double x_min = params->minima[0] + min_displacement;
-                double x_max = params->minima[1] + max_displacement;
-                double dx = (x_max - x_min) / 10000;
-                double plot_x = x_min;
-                for (long i=0; i < 10000; i++){
-                    double gauss_val = gaussian(plot_x, params->gauss_width, params->gauss_positions[0], params->height_arr[0]);
-                    double tot_val = (*params->Poten_shifted)(plot_x) + gauss_val;
-                    fprintf(bias_out, "%lf, %lf\n", plot_x, tot_val);
-                    plot_x += dx;
-                }
-                fclose(bias_out);
+            if (params->no_gaussians == 50) {
 
+                double dx = (params->x_max - params->x_min) / 10000;
+                int well;
+
+                FILE *bin_file = fopen("bins.csv", "w");
+                double bin_loc = min_potential_difference;
+                for (long bin_no=0; bin_no < no_biasbins; bin_no++) {
+                    fprintf(bin_file, "%lf, %ld\n", bin_loc, params->pot_diff_histogram[bin_no]);
+                    bin_loc += bin_width;
+                }
+                fclose(bin_file);
+
+
+//                for (long j = 0; j < params->no_gaussians; j++) {
+//                    char filename[20];
+//                    sprintf(filename, "gauss_%ld.csv", j);
+//                    FILE *gauss_file = fopen(filename, "w");
+//                    double plot_x = params->x_min;
+//                    for (long i = 0; i < 10000; i++){
+//                        calibrate_well(&well, plot_x);
+//                        double dis = well_dis(plot_x, well, params);
+//                        double pot_diff = potential_difference(dis, params);
+//                        double gauss_val = gaussian(pot_diff, params->gauss_width, params->gauss_positions[j], params->height_arr[j]);
+//                        fprintf(gauss_file, "%lf, %lf\n", plot_x, gauss_val);
+//                        plot_x += dx;
+//                    }
+//                    fclose(gauss_file);
+//                }
+
+                FILE *tot_file = fopen("total_vals.csv", "w");
+                double x_val = params->x_min;
+                for (long i = 0; i < 10000; i++) {
+                    calibrate_well(&well, x_val);
+                    double dis = well_dis(x_val, well, params);
+                    double pot_diff = potential_difference(dis, params);
+                    double gauss_val = 0;
+                    for (long j = 0; j < params->no_gaussians; j++) {
+                        gauss_val += gaussian(pot_diff, params->gauss_width, params->gauss_positions[j], params->height_arr[j]);
+                    }
+                    double poten_val = (*params->Poten_shifted)(x_val);
+                    double bias_val = biasing_function(x_val, well, params);
+                    fprintf(tot_file, "%lf, %lf, %lf, %lf\n", x_val, gauss_val, bias_val, poten_val);
+                    x_val += dx;
+                }
 
                 exit(0);
             }
+
 
             // Performs a set number of timesteps
             for (long j = 0; j < gauss_regularity; j++) {
                 // Adds to the potential difference histogram with the current position
                 cur_poten_diff = potential_difference(well_dis(x, cur_well, params), params);
+                fprintf(poten_diff_file, "%lf, %lf\n", cur_poten_diff, x);
                 params->pot_diff_histogram[get_bin_no(cur_poten_diff, min_potential_difference,
                                               max_potential_difference, bin_width, no_biasbins)]++;
-
+                printf("%ld\n", j);
                 if (genrand_real1() < 0.1) {
                     // Attempts a lattice switch with probability 0.1
-                    lattice_switch(x, &cur_well, params);
+                    printf("I am attempting a switch\n");
+                    x = lattice_switch(x, &cur_well, params);
                 } else {
                     // Else, performs a regular dynamics step
                     x = biased_BAOAB_limit(x, cur_well, params);
@@ -300,7 +317,7 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
 
 //            printf("My x value is: %lf\n", x);
 //            printf("My bin number is: %ld\n", get_bin_no(cur_poten_diff, min_potential_difference, max_potential_difference, bin_width, no_biasbins));
-            params->height_arr[params->no_gaussians] = cur_height;
+            params->height_arr[params->no_gaussians] = 0;
             params->gauss_positions[params->no_gaussians] = cur_poten_diff;
 
             params->no_gaussians++;
@@ -328,6 +345,9 @@ double biased_simulation(double initial_f, double min_f, double gauss_width, lon
     }
 
 
+    free(params->height_arr);
+    free(params->gauss_positions);
+    fclose(poten_diff_file);
     return 0.1;
 }
 
